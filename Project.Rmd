@@ -11,13 +11,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Data Importing and Cleaning
 ## Set Up Environment
-```{r environments and setup}
+```{r environments and setup, message=FALSE}
 # calling required packages
 library(readr)
 library(tidyverse)
+library(tidymodels)
+tidymodels_prefer()
 
-# setting working directory 
-setwd("~/Documents/Grad/Spring 2023/STAT_5125/course project /project")
+setwd("~/Documents/Grad/Spring 2023/STAT_5125/course project /project/STAT5125_Project")
 ```
 
 ## Read in Data and Cleaning
@@ -25,7 +26,7 @@ setwd("~/Documents/Grad/Spring 2023/STAT_5125/course project /project")
 ```{r Cleaning dataset 11_Direct_Investment-related_Indicators}
 ####### Cleaning dataset 11_Direct_Investment-related_Indicators #######
 # read the investment indicators dataset
-investment_indicators <- read_csv("climate/IMF-CID/11_Direct_Investment-related_Indicators.csv")
+investment_indicators <- read_csv("11_Direct_Investment-related_Indicators.csv")
 
 # initial investigation in the dataset. 
 investment_indicators %>% glimpse()
@@ -91,7 +92,7 @@ rm(tmp, investment_indicators)
 ### Cleaning Dataset 24_Climate-related_Diasters_Frequency
 ```{r Cleaning dataset 24_Climate-related_Diasters_Frequency}
 ####### Cleaning dataset 24_Climate-related_Diasters_Frequency#######
-disasters_frequency <- read_csv("climate/IMF-CID/24_Climate-related_Disasters_Frequency.csv")
+disasters_frequency <- read_csv("24_Climate-related_Disasters_Frequency.csv")
 
 # CTS Code for climate related disasters frequency is ECCD. 
 # Adding ECCD to CTS_label dictionary. 
@@ -139,11 +140,30 @@ disasters_df <- disasters_frequency %>%
 
 #######Combining the two data sets#######
 df <- emission_df %>% left_join(disasters_df, by = c("ISO3", "Year"))
+df %>% 
+  mutate_at(c("Sector_abb", "Year"), as.factor) %>%
+  glimpse()
 
 # remove data not going to be used
 rm(ECCD_df, disasters_frequency)
-
-
 ```
 
-# 
+## Train Test Splitting
+```{r Train Test Splitting}
+set.seed(123457)
+df_split <- df %>% initial_split(prop = 0.8)
+train <- df_split %>% training()
+test <- df_split %>% testing()
+```
+
+# Defining Workflow
+```{r}
+parsnip_1 <- linear_reg() %>%
+  set_mode("regression") %>%
+  set_engine("lm")
+workflow_1 <- workflow() %>% 
+  add_model(parsnip_1) %>%
+  add_formula()
+```
+
+
