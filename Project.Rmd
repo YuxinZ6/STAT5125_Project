@@ -160,16 +160,23 @@ df <- df %>% rename(Export_Domestics = ECBIXD,
                            PerUnitOutput_Domestic = ECBIPD,
                            Gross_Fixed_Capital_Formation = ECBIFR,
                            Gross_Fixed_Capital_Formation_Final_Demand_Ratio = ECBIFF,
-                           Disaster_Frequency = ECCD
-)
+                           Disaster_Frequency = ECCD)
+
+#Renaming sectors
+df<- df %>% 
+  rename(label = Sector_abb) %>% 
+  left_join(Sectors_label, by = "label") %>%
+  relocate(Sector, .after = Year) %>%
+  select(-label)
+
 
 df_long <- df %>% pivot_longer(cols = Export_Domestics:Disaster_Frequency,
                            names_to = "Category",
                            values_to = "Value")
-df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"), 
+df_wide <- df_long %>% pivot_wider(names_from = c("Sector", "Category"), 
                                    values_from = Value, 
                                    values_fill = 0,
-                                   names_glue = "{Category}_{Sector_abb}")
+                                   names_glue = "{Category}_{Sector}")
 ```
 
 ## Train Test Splitting
