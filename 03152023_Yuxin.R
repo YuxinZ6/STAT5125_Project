@@ -5,12 +5,12 @@ library(readr)
 library(tidyverse)
 
 # setting working directory 
-setwd("~/Documents/Grad/Spring 2023/STAT_5125/course project /project")
+setwd("~/Documents/Grad/Spring 2023/STAT_5125/course project /project/STAT5125_Project")
 
 
 ####### Cleaning dataset 11_Direct_Investment-related_Indicators #######
 # read the investment indicators dataset
-investment_indicators <- read_csv("climate/IMF-CID/11_Direct_Investment-related_Indicators.csv")
+investment_indicators <- read_csv("11_Direct_Investment-related_Indicators.csv")
 
 # initial investigation in the dataset. 
 investment_indicators %>% glimpse()
@@ -75,7 +75,7 @@ rm(tmp, investment_indicators)
 
 
 ####### Cleaning dataset 24_Climate-related_Diasters_Frequency#######
-disasters_frequency <- read_csv("climate/IMF-CID/24_Climate-related_Disasters_Frequency.csv")
+disasters_frequency <- read_csv("24_Climate-related_Disasters_Frequency.csv")
 
 # CTS Code for climate related disasters frequency is ECCD. 
 # Adding ECCD to CTS_label dictionary. 
@@ -126,4 +126,39 @@ df <- emission_df %>% left_join(disasters_df, by = c("ISO3", "Year"))
 
 # remove data not going to be used
 rm(ECCD_df, disasters_frequency)
+
+
+
+#####More Manipulation to the Dataset#####
+df <- df %>% relocate(Year, .before = Sector_abb)
+df <- df %>% mutate_all(~ ifelse(is.na(.), 0, .))
+df <- df %>% rename(Export_Domestics = ECBIXD,
+                           Export_Foreign = ECBIXF,
+                           Output_Domestic = ECBIOD,
+                           Output_Foreign = ECBIOF,
+                           PerUnitOutput_Foreign = ECBIPF,
+                           PerUnitOutput_Domestic = ECBIPD,
+                           Gross_Fixed_Capital_Formation = ECBIFR,
+                           Gross_Fixed_Capital_Formation_Final_Demand_Ratio = ECBIFF,
+                           Disaster_Frequency = ECCD
+)
+
+df_long <- df %>% pivot_longer(cols = Export_Domestics:Disaster_Frequency,
+                           names_to = "Category",
+                           values_to = "Value")
+df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"), 
+                                   values_from = Value, 
+                                   values_fill = 0,
+                                   names_glue = "{Category}_{Sector_abb}")
+
+
+
+
+
+
+
+
+
+
+
 
