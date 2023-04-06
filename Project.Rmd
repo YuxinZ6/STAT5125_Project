@@ -214,7 +214,7 @@ df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"),
                                    values_from = Value, 
                                    values_fill = 0,
                                    names_glue = "{Category}_{Sector_abb}")
-rm(df_long, df)
+# rm(df_long, df)
 ```
 
 ## Train Test Splitting
@@ -224,6 +224,40 @@ df_split <- df %>% initial_split(prop = 0.8)
 train <- df_split %>% training()
 test <- df_split %>% testing()
 ```
+
+# Defining the Research Question
+To examine the effects of domestically- versus foreign- controlled enterprises' CO2 emissions relative to sectors of activities performed for each country on climate related disasters. 
+The models that we will approach are as the following:
+- (Rene) Poisson Generalized Linear Regression Model with Lasso Penalty
+  - Lasso Penalty will be determined through cross validation. 
+- (Rene) Poisson Generalized Linear Model with Elastic Net Penalty
+  - cross validation to determine the best penalty rate
+- (Yuxin) Random Forest
+  - pass along several possible combinations of hyper-parameters and perform cross validation
+    - maximum depth, minimum number of samples at each split, n_estimators (4 for each)
+    - parallel computing
+- (Jen) K-Nearest Neighbors Regression
+  - cross validation to determine the best k
+- (Yuxin) XG-Boost
+  - pass along several possible combinations of hyper-parameters and perform cross validation
+  - maximum depth, minimum number of samples at each split, n_estimators (4 for each)
+  - parallel computing
+  
+TARGET VARIABLE: Disaster_Frequency
+
+graphics: 
+- (Rene) line graph, count of disaster by year
+  - color code by sector (t.s. plot)
+- (Rene) line graph of aggregated count of disasters cross years. 
+  - t.s. plot
+- (Jen) world map and co2 emission (optional)
+  - aggregating the co2 emission across all years, and rank by country.
+  - ranking is going to be done by color. (gradient color, red is worse, while green is better)
+- (Jen) co2 emission by country (do first, if time then do map)
+- (Jen) bar graphs of *df_long* category column, x_axis is year. 
+  - facet wrap by category
+- (Yuxin) scatter plot, x-axis will be co2 emission, y-axis will be count of disasters. 
+  - because count of disaster goes by year, then we will need to aggregate the co2 emission by country and by year. so we sum all of the sectors and types of co2 emissions. 
 
 # Defining Workflow
 ```{r}
