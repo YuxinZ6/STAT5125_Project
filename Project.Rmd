@@ -207,13 +207,14 @@ df <- df %>% rename(Export_Domestics = ECBIXD,
                            Disaster_Frequency = ECCD)
 
 
-df_long <- df %>% pivot_longer(cols = Export_Domestics:Disaster_Frequency,
+df_long <- df %>% pivot_longer(cols = Export_Domestics:Output_Foreign,
                            names_to = "Category",
                            values_to = "Value")
 df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"), 
                                    values_from = Value, 
                                    values_fill = 0,
                                    names_glue = "{Category}_{Sector_abb}")
+rm(df_long, df)
 ```
 
 ## Train Test Splitting
