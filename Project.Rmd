@@ -68,7 +68,6 @@ investment_indicators <- investment_indicators %>%
   relocate(Sector_abb, .before = Sector) %>% 
   glimpse()
 
-
 # select the columns of interest, save it temporarily.
 tmp <- investment_indicators %>% select(ISO3, `CTS Code`, Sector_abb, 
                                         `2005`:`2018`)
@@ -77,8 +76,58 @@ emission_df <- tmp %>% pivot_longer(cols = `2005`:`2018`,
                                     names_to = "Year",
                                     values_to = "CO2_emission") %>%
   pivot_wider(names_from = `CTS Code`,
-              values_from = CO2_emission)
+              values_from = CO2_emission) %>% 
+  select(-ECBIPF, -ECBIPD, -ECBIFR, -ECBIFF) %>% 
+  mutate_all(~ ifelse(is.na(.), 0, .))
 
+# Combining some sectors that have overlaps
+emission_df <- emission_df %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_1", 
+             "sector_14"),
+             "Food", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_18", 
+             "sector_42", "sector_43", "sector_44"),
+             "Mining", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_2", 
+             "sector_40"),
+             "Agriculture", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_3", 
+             "sector_37"),
+             "Recreation", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_4", 
+             "sector_12","sector_22", "sector_34"),
+             "RawMaterial", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_5", 
+             "sector_46","sector_38"),
+             "Pharma", Sector_abb)) %>%  
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_6", 
+             "sector_11", "sector_39", "sector_50"),
+             "Energy", Sector_abb)) %>% 
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_7", 
+             "sector_10", "sector_30"),
+             "Electronic", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_8"),
+             "Construction", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_9"),
+             "Education", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_13",
+             "sector_20", "sector_28", "sector_25", "sector_35",
+             "sector_45", "sector_47", "sector_48", "sector_15",
+             "sector_16", "sector_27", "sector_26"),
+             "HumanActivities", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_17", 
+             "sector_21"),
+             "Machinery", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_19", 
+             "sector_23", "sector_32", "sector_33", "sector_36",
+             "sector_41", "sector_49", "sector_51"),
+             "Transportation", Sector_abb)) %>%
+  mutate(Sector_abb = if_else(Sector_abb %in% c("sector_24", 
+             "sector_29", "sector_31"),
+             "Manufacturing", Sector_abb)) %>%
+  group_by(ISO3, Year, Sector_abb) %>%
+  reframe(across(c(ECBIXD, ECBIXF, ECBIOD, ECBIOF), sum))
+  
 
 # remove data that will not be used again
 rm(tmp, investment_indicators)
@@ -120,7 +169,6 @@ disasters_frequency <- disasters_frequency %>%
   rename(Indicator = Indicator_abb)
 
 # filter to only total count of disasters.
-# MAY NEED ADJUSTMENTS!!
 disasters_frequency <- disasters_frequency %>%
   filter(Indicator == "TOTAL") %>% 
   select(-Indicator)
@@ -141,7 +189,7 @@ disasters_df <- disasters_frequency %>%
 #######Combining the two data sets#######
 df <- emission_df %>% left_join(disasters_df, by = c("ISO3", "Year"))
 df %>% 
-  mutate_at(c("Sector_abb", "Year"), as.factor) %>%
+  mutate_at("Year", as.factor) %>%
   glimpse()
 
 # remove data not going to be used
@@ -151,32 +199,21 @@ rm(ECCD_df, disasters_frequency)
 
 #####More Manipulation to the Dataset#####
 df <- df %>% relocate(Year, .before = Sector_abb)
-df <- df %>% mutate_all(~ ifelse(is.na(.), 0, .))
+# df <- df %>% mutate_all(~ ifelse(is.na(.), 0, .))
 df <- df %>% rename(Export_Domestics = ECBIXD,
                            Export_Foreign = ECBIXF,
                            Output_Domestic = ECBIOD,
                            Output_Foreign = ECBIOF,
-                           PerUnitOutput_Foreign = ECBIPF,
-                           PerUnitOutput_Domestic = ECBIPD,
-                           Gross_Fixed_Capital_Formation = ECBIFR,
-                           Gross_Fixed_Capital_Formation_Final_Demand_Ratio = ECBIFF,
                            Disaster_Frequency = ECCD)
-
-#Renaming sectors
-df<- df %>% 
-  rename(label = Sector_abb) %>% 
-  left_join(Sectors_label, by = "label") %>%
-  relocate(Sector, .after = Year) %>%
-  select(-label)
 
 
 df_long <- df %>% pivot_longer(cols = Export_Domestics:Disaster_Frequency,
                            names_to = "Category",
                            values_to = "Value")
-df_wide <- df_long %>% pivot_wider(names_from = c("Sector", "Category"), 
+df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"), 
                                    values_from = Value, 
                                    values_fill = 0,
-                                   names_glue = "{Category}_{Sector}")
+                                   names_glue = "{Category}_{Sector_abb}")
 ```
 
 ## Train Test Splitting
