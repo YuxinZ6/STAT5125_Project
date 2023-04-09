@@ -199,7 +199,7 @@ rm(ECCD_df, disasters_frequency)
 
 #####More Manipulation to the Dataset#####
 df <- df %>% relocate(Year, .before = Sector_abb)
-# df <- df %>% mutate_all(~ ifelse(is.na(.), 0, .))
+df <- df %>% mutate_all(~ ifelse(is.na(.), 0, .))
 df <- df %>% rename(Export_Domestics = ECBIXD,
                            Export_Foreign = ECBIXF,
                            Output_Domestic = ECBIOD,
@@ -214,13 +214,17 @@ df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"),
                                    values_from = Value, 
                                    values_fill = 0,
                                    names_glue = "{Category}_{Sector_abb}")
+
+# convert year from character to factor
+df_wide <- df_wide %>% 
+  mutate(Year = as.factor(Year))
 # rm(df_long, df)
 ```
 
 ## Train Test Splitting
 ```{r Train Test Splitting}
 set.seed(123457)
-df_split <- df %>% initial_split(prop = 0.8)
+df_split <- df_wide %>% initial_split(prop = 0.8)
 train <- df_split %>% training()
 test <- df_split %>% testing()
 ```
