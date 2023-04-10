@@ -152,13 +152,16 @@ stopCluster(cl)
 
 ###################################################################
 # Visualizations: 
+# optimize data for scatterplot
 scatterplot_df <- df_long %>% group_by(ISO3, Year) %>%
   reframe(emission = sum(`Value`),
           Disaster_Frequency = first(Disaster_Frequency)) %>%
   glimpse()
 
+# convert country (IOS3) as factor
 scatterplot_df$ISO3 <- as.factor(scatterplot_df$ISO3)
 
+# plot the scatter plot
 scatterplot_df %>% ggplot(aes(x = log(emission), y = Disaster_Frequency)) + 
   geom_point() + 
   geom_point(data = scatterplot_df[scatterplot_df$Disaster_Frequency>10, ],
