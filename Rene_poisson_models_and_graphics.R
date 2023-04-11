@@ -9,7 +9,7 @@ train_sub <- train %>% select(-c(ISO3))
 
 # Poisson Generalized Linear Regression Model with Lasso Penalty
 poi_recipe <- recipe(Disaster_Frequency ~., data = train_sub) %>%
-  setp_dummy(all_factor_predictors()) %>%
+  step_dummy(all_factor_predictors()) %>%
   step_normalize(all_predictors())
 # defining model using poisson_reg()
 poi_parsnip <-  poisson_reg(penalty = "lasso") %>%
@@ -35,6 +35,7 @@ poi_fitted
 #  Poisson Generalized Linear Model with Elastic Net Penalty
 # defining recipe
 poi_recipe_enp <- recipe(Disaster_Frequency ~., data = train_sub) %>%
+  step_dummy(all_factor_predictors()) %>%
   step_normalize(all_predictors())
 # defining model using poisson_reg with elastic net penalty
 poi_parsnip_enp <-  poisson_reg(penalty = "elastic_net") %>%
