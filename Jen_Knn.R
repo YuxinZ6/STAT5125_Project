@@ -123,17 +123,24 @@ ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) +
     y = "Metric Tons of CO2 Emission"
   ) 
 
-# 
-# # Bar of bar graphs of *df_long* category column, x_axis is year. 
-# ggplot(df_long,aes(x=Year, fill=ISO3)) + 
-#   geom_bar() +
-#   facet_wrap(~Category) +
-#   labs(
-#     title = "CO2 emissions by Year ",
-#     x = "Year", 
-#     y = "CO2 emissions"
-#   )
+# map
+library(maps)
 
+world <- map_data("world")
+
+bind <- df_long %>% left_join(Country_label, by="ISO3") %>% 
+  select(c(Country,Value)) %>% 
+  group_by(Country) %>% reframe(Value = sum(Value)) %>% 
+  # group_by(Country) %>% first(Value) %>% 
+  glimpse()
+world <- world %>% full_join(bind, by = c("region" ="Country"))
+world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
+
+ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
+  geom_polygon(color="blue") +
+  scale_fill_gradient(low = "white", high = "red") +
+  coord_fixed() + 
+  ggtitle("Map of CO2 Emission Recorded in Dataset")
 
 
 
