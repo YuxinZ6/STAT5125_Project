@@ -71,7 +71,7 @@ df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
 ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
   geom_line() +
   geom_point() +
-  labs(title = "Count of Disaster by Year (disasters > 500)",
+  labs(title = "Count of Disaster by Year for Each Country (disasters > 500)",
        x = "Year", 
        y = "Sum of Disaster",
        color = "Country") 
@@ -89,7 +89,7 @@ df_aggregate_2$Year <- as.numeric(as.character(df_aggregate_2$Year))
 ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
   geom_line(color = "blue") +
   geom_point(color = "blue") +
-  labs(title = " Disaster Frequency by Year ",
+  labs(title = "Total Disaster Frequency by Year ",
        x = "Year",
        y = "Sum Disaster Frequency")
 
