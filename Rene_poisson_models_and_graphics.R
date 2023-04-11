@@ -3,7 +3,7 @@ library(ggplot2)
 library(poissonreg)
 
 #### MODELS ####
-
+set.seed(123457)
 # subsetting train dataset. excluding ISO3 and Year
 train_sub <- train %>% select(-c(ISO3))
 
@@ -33,6 +33,7 @@ poi_fitted <- poi_workflow %>% fit(train_sub)
 poi_fitted
 
 #  Poisson Generalized Linear Model with Elastic Net Penalty
+set.seed(123457)
 # defining recipe
 poi_recipe_enp <- recipe(Disaster_Frequency ~., data = train_sub) %>%
   step_dummy(all_factor_predictors()) %>%
