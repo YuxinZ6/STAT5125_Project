@@ -25,6 +25,7 @@ library(yardstick)
 library(ggplot2)
 library(xgboost)
 library(yardstick)
+library(kknn)
 tidymodels_prefer()
 ```
 
@@ -295,44 +296,12 @@ scatterplot_df %>% ggplot(aes(x = log(emission + 0.0001),
   ggtitle("Emission versus Disaster Count for Each Country")
 ```
 
-```{r Line Graph: Count of Disaster by Year for Each Country}
-# line graph, count of disasters by Year,  color code by country (t.s. plot)
-# creating aggregate dataset, grouping by Year and ISO3, summary of total disaster
-df_aggregate_1 <- df_long %>% 
-  group_by(Year, ISO3) %>% 
-  summarise(total_disaster = sum(Disaster_Frequency)) %>%
-  filter(total_disaster > 500)
+```{r}
 
-# convert Year to numeric
-df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
-
-# ggplot using aggregate dataset
-ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
-  geom_line() +
-  geom_point() +
-  labs(title = "Count of Disaster by Year for Each Country (disasters > 500)",
-       x = "Year", 
-       y = "Sum of Disaster",
-       color = "Country") 
 ```
 
-```{r Line Graph: Aggregated Across Year}
-#line graph of aggregated count of disasters across years 
-# using df_wide to create aggregate dataset, group by Year, summary of disaster
-df_aggregate_2 <- df_wide %>% 
-  group_by(Year) %>% 
-  summarize(total_disaster_frequency = sum(Disaster_Frequency))
+```{r}
 
-# converting Year to numeric
-df_aggregate_2$Year <- as.numeric(as.character(df_aggregate_2$Year))
-
-# ggplot using aggregate dataset
-ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
-  geom_line(color = "blue") +
-  geom_point(color = "blue") +
-  labs(title = "Total Disaster Frequency by Year ",
-       x = "Year",
-       y = "Sum Disaster Frequency")
 ```
 
 ```{r}
@@ -509,14 +478,8 @@ boost_fit
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
-```{r Poisson_Lasso: Data Prep}
-# subsetting train dataset. excluding ISO3 and Year
-train_sub <- train %>% select(-c(ISO3))
-```
-
-```{r Poisson_Lasso: Define workflow}
+```{r Poisson Lasso}
 # Poisson Generalized Linear Regression Model with Lasso Penalty
-set.seed(123457)
 poi_recipe <- recipe(Disaster_Frequency ~., data = train_sub) %>%
   step_dummy(all_factor_predictors()) %>%
   step_normalize(all_predictors())
@@ -530,17 +493,16 @@ poi_workflow <- workflow() %>%
   add_recipe(poi_recipe)
 ```
 
-```{r Poisson_Lasso: Fitting With Cross Validation}
+```{r Poisson Lasso}
 # Cross validation on train dataset
 poi_result <- poi_workflow %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
-    metrics = metric_set(rmse, rsq, rsq_trad),
+    metrics = metric_set(rmse, rsq, rsq_trad))
     
-  )
 ```
 
-```{r Poisson_Lasso: Display Result}
+```{r Poisson Lasso Results}
 # showing results 
 poi_result %>% collect_metrics()
 
@@ -548,9 +510,8 @@ poi_fitted <- poi_workflow %>% fit(train_sub)
 poi_fitted
 ```
 
-
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
-```{r Poisson_EN: Define Workflow}
+```{r Poisson Elastic Net}
 #  Poisson Generalized Linear Model with Elastic Net Penalty
 set.seed(123457)
 # defining recipe
@@ -567,35 +528,97 @@ poi_workflow_enp <- workflow() %>%
   add_recipe(poi_recipe_enp)
 ```
 
-```{r Poisson_EN: Fitting with Cross Validation}
+```{r Poisson Elastic Net}
 # cross validation on train dataset
 poi_result_enp <- poi_workflow_enp %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
     metrics = metric_set(rmse, rsq, rsq_trad),
-    
-  )
+    )
 ```
 
-```{r Poisson_EN: Display Result}
+```{r Poisson Elastic Net}
 # showing results
 poi_result_enp %>% collect_metrics()
 ```
 
-
 ##  K-Nearest Neighbors Regression
-```{r}
+```{r K-nearest}
+# Set seed
+set.seed(123457)
+# k=5
+knn_parsnip_5 <- nearest_neighbor() %>% 
+  set_mode("regression") %>%
+  set_engine("kknn", neighbors = 5)
+knn_recipe_5 <- recipe(Disaster_Frequency ~ .,
+                       data = train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+knn_workflow_5 <- workflow() %>%
+  add_model(knn_parsnip_5) %>%
+  add_recipe(knn_recipe_5)
+knn_5s <- knn_workflow_5 %>% fit(train)
+
+# k=10
+knn_parsnip_10 <- nearest_neighbor() %>% 
+  set_mode("regression") %>%
+  set_engine("kknn", neighbors = 10)
+knn_recipe_10 <- recipe(Disaster_Frequency ~ .,
+                        data = train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+knn_workflow_10 <- workflow() %>%
+  add_model(knn_parsnip_10) %>%
+  add_recipe(knn_recipe_10)
+knn_10 <- knn_workflow_10 %>% fit(train)
+
+# k=20 
+knn_parsnip_20 <- nearest_neighbor() %>% 
+  set_mode("regression") %>%
+  set_engine("kknn", neighbors = 20)
+knn_recipe_20 <- recipe(Disaster_Frequency ~ .,
+                        data = train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+knn_workflow_20 <- workflow() %>%
+  add_model(knn_parsnip_20) %>%
+  add_recipe(knn_recipe_20)
+knn_20 <- knn_workflow_20 %>% fit(train)
+```
+
+```{r K-nearest Validation}
+# Cross validation
+# k=5
+knn_val1<- knn_workflow_5 %>%
+  fit_resamples(
+    resamples = vfold_cv(train, v = 10),
+    metrics = metric_set(rmse, rsq, mae,rsq_trad),
+  )
+knn_val1 %>% collect_metrics()
+# k=10
+knn_val2 <- knn_workflow_10 %>%
+  fit_resamples(
+    resamples = vfold_cv(train, v = 10),
+    metrics = metric_set(rmse, rsq, mae,rsq_trad),
+  )
+knn_val2 %>% collect_metrics()
+
+# k=20
+knn_val3 <- knn_workflow_10 %>%
+  fit_resamples(
+    resamples = vfold_cv(train, v = 10),
+    metrics = metric_set(rmse, rsq, mae,rsq_trad),
+  )
+knn_val3 %>% collect_metrics()
+
+
+metrics_knn <- bind_rows(
+  knn_val1 %>% collect_metrics(),
+  knn_val2 %>% collect_metrics(),
+  knn_val3 %>% collect_metrics(),
+  .id = "Model"
+)
+metrics_knn
 
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```

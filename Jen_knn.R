@@ -136,7 +136,7 @@ world <- world %>% full_join(bind, by = c("region" ="Country"))
 world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 
 ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
-  geom_polygon(color="blue") +
+  geom_polygon(color="gray") +
   scale_fill_gradient(low = "white", high = "red") +
   coord_fixed() + 
   ggtitle("Map of CO2 Emission Recorded in Dataset") +
