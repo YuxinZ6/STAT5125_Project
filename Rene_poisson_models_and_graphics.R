@@ -1,13 +1,15 @@
 
 library(ggplot2)
+library(poissonreg)
 
 #### MODELS ####
 
 # subsetting train dataset. excluding ISO3 and Year
-train_sub <- subset(train, select = -c(ISO3, Year))
+train_sub <- train %>% select(-c(ISO3))
 
 # Poisson Generalized Linear Regression Model with Lasso Penalty
 poi_recipe <- recipe(Disaster_Frequency ~., data = train_sub) %>%
+  setp_dummy(all_factor_predictors()) %>%
   step_normalize(all_predictors())
 # defining model using poisson_reg()
 poi_parsnip <-  poisson_reg(penalty = "lasso") %>%
@@ -27,6 +29,8 @@ poi_result <- poi_workflow %>%
 # showing results 
 poi_result %>% collect_metrics()
 
+poi_fitted <- poi_workflow %>% fit(train_sub)
+poi_fitted
 
 #  Poisson Generalized Linear Model with Elastic Net Penalty
 # defining recipe
