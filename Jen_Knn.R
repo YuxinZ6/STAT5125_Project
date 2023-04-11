@@ -103,14 +103,20 @@ metrics_knn
 
 ##### Visuals #####
 # Map maybe 
+
 # aggregating the co2 emission across all years, and rank by country.
 df_agg <- df_long %>% 
-  group_by(Year, ISO3) %>% summarize(across(c(Year, ISO3),sum))
+  group_by(Year, ISO3) %>% arrange(desc(Value))  
+
+
+test_df <- df_long %>% group_by(ISO3, Year) %>%
+  reframe(emission = sum(`Value`),
+          Disaster_Frequency = first(Disaster_Frequency))
 
 # CO2 by Country
-ggplot(df_long,aes(x=ISO3, y=Value)) + 
+ggplot(df_long,aes(x=ISO3, y= emission)) + 
   geom_line()  +
-  facet_wrap(~ISO3)+
+  facet_wrap(~Category)+
   labs(
     title = "CO2 emissions by Country",
     x = "Country", 
