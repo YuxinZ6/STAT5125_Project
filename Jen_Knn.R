@@ -103,30 +103,36 @@ metrics_knn
 
 ##### Visuals #####
 # Map maybe 
-# aggregating the co2 emission across all years, and rank by country.
+# aggregating the co2 emission across all years and all sectors, 
+# and rank by category.
 df_agg <- df_long %>% 
-  group_by(Year, ISO3) %>% summarize(across(c(Year, ISO3),sum))
+  group_by(ISO3, Category) %>%
+  reframe(emission = sum(`Value`)) %>%
+  mutate_if(is.character, as.factor) %>%
+  group_by(Category) %>%
+  arrange(desc(emission)) %>%
+  slice(1:10)
 
 # CO2 by Country
-ggplot(df_long,aes(x=ISO3, y=Value)) + 
-  geom_line()  +
-  facet_wrap(~ISO3)+
+ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) + 
+  geom_bar(stat = "identity")  +
+  # facet_wrap(~Category)+
   labs(
-    title = "CO2 emissions by Country",
+    title = "CO2 emissions by Category of Enterprise for Each Country",
     x = "Country", 
-    y = "CO2 emissions (Units?)"
-  )
+    y = "Metric Tons of CO2 Emission"
+  ) 
 
-
-# Bar of bar graphs of *df_long* category column, x_axis is year. 
-ggplot(df_long,aes(x=Year, fill=ISO3)) + 
-  geom_bar() +
-  facet_wrap(~Category) +
-  labs(
-    title = "CO2 emissions by Year ",
-    x = "Year", 
-    y = "CO2 emissions"
-  )
+# 
+# # Bar of bar graphs of *df_long* category column, x_axis is year. 
+# ggplot(df_long,aes(x=Year, fill=ISO3)) + 
+#   geom_bar() +
+#   facet_wrap(~Category) +
+#   labs(
+#     title = "CO2 emissions by Year ",
+#     x = "Year", 
+#     y = "CO2 emissions"
+#   )
 
 
 
