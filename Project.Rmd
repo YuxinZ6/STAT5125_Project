@@ -296,20 +296,80 @@ scatterplot_df %>% ggplot(aes(x = log(emission + 0.0001),
   ggtitle("Emission versus Disaster Count for Each Country")
 ```
 
-```{r}
+```{r Disaster By Year for Each Country}
+df_aggregate_1 <- df_long %>% 
+  group_by(Year, ISO3) %>% 
+  summarise(total_disaster = sum(Disaster_Frequency)) %>%
+  filter(total_disaster > 500)
 
+# convert Year to numeric
+df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
+
+# ggplot using aggregate dataset
+ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Count of Disaster by Year for Each Country (disasters > 500)",
+       x = "Year", 
+       y = "Sum of Disaster",
+       color = "Country") 
 ```
 
-```{r}
+```{r Disaster By Year}
+df_aggregate_2 <- df_wide %>% 
+  group_by(Year) %>% 
+  summarize(total_disaster_frequency = sum(Disaster_Frequency))
 
+# converting Year to numeric
+df_aggregate_2$Year <- as.numeric(as.character(df_aggregate_2$Year))
+
+# ggplot using aggregate dataset
+ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
+  geom_line(color = "blue") +
+  geom_point(color = "blue") +
+  labs(title = "Total Disaster Frequency by Year ",
+       x = "Year",
+       y = "Sum Disaster Frequency")
 ```
 
-```{r}
+```{r CO2 Emissions by Type pf Enterprise}
+df_agg <- df_long %>% 
+  group_by(ISO3, Category) %>%
+  reframe(emission = sum(`Value`)) %>%
+  mutate_if(is.character, as.factor) %>%
+  group_by(Category) %>%
+  arrange(desc(emission)) %>%
+  slice(1:10)
 
+# CO2 by Country
+ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) + 
+  geom_bar(stat = "identity")  +
+  # facet_wrap(~Category)+
+  labs(
+    title = "CO2 emissions by Category of Enterprise for Each Country",
+    x = "Country", 
+    y = "Metric Tons of CO2 Emission"
+  ) 
 ```
 
-```{r}
+```{r Map of CO2 Emisions}
+library(maps)
+world <- map_data("world")
 
+bind <- df_long %>% left_join(Country_label, by="ISO3") %>% 
+  select(c(Country,Value)) %>% 
+  group_by(Country) %>% reframe(Value = sum(Value)) %>% 
+  # group_by(Country) %>% first(Value) %>% 
+  glimpse()
+world <- world %>% full_join(bind, by = c("region" ="Country"))
+world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
+
+ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
+  geom_polygon(color="gray") +
+  scale_fill_gradient(low = "white", high = "red") +
+  coord_fixed() + 
+  ggtitle("Map of CO2 Emission Recorded in Dataset") +
+  labs(fill='Log of Metric \nTons of CO2 \nEmission')
 ```
 
 # Modeling
@@ -537,7 +597,7 @@ poi_result_enp <- poi_workflow_enp %>%
     )
 ```
 
-```{r Poisson Elastic Net}
+```{r Poisson Elastic Net Results}
 # showing results
 poi_result_enp %>% collect_metrics()
 ```
