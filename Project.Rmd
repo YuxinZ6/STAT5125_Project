@@ -479,6 +479,13 @@ Best_result <- Best_result1 %>% rbind(Best_result2)
 Best_result
 ```
 
+```{r Random Forest Prediction}
+# predict the test set and evaluate
+RF_fit %>% predict(test) %>% 
+  mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+  RF_metrics(truth = truth, estimate = .pred)
+```
+
 ## XG-Boosting
 ```{r XG-Boosting}
 # set the seed
@@ -568,6 +575,13 @@ workflow_Boost_train <- workflow() %>%
 # fit to the train data
 boost_fit <- workflow_Boost_train %>% fit(data = train) 
 boost_fit 
+```
+
+```{r XG-Boostnig Prediction} 
+# predict the test set and evaluate
+boost_fit %>% predict(test) %>% 
+  mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+  boost_metrics(truth = truth, estimate = .pred)
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty

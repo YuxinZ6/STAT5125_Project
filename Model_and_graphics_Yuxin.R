@@ -113,8 +113,10 @@ workflow_RF_train <- workflow() %>%
 RF_fit <- workflow_RF_train %>% fit(data = train) 
 RF_fit 
 
-RF_fit %>% predict(test) %>% mutate(truth = train$Disaster_Frequency, 
-                                    estimate = .pred)
+# predict the test set and evaluate
+RF_fit %>% predict(test) %>% 
+  mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+  RF_metrics(truth = truth, estimate = .pred)
 
 ###################################################################
 #####XG-Boost#####
@@ -207,6 +209,11 @@ workflow_Boost_train <- workflow() %>%
 # fit to the train data
 boost_fit <- workflow_Boost_train %>% fit(data = train) 
 boost_fit 
+
+# predict the test set and evaluate
+boost_fit %>% predict(test) %>% 
+  mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+  boost_metrics(truth = truth, estimate = .pred)
 
 ###################################################################
 ######Visualization#####
