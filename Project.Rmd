@@ -28,6 +28,14 @@ library(yardstick)
 library(kknn)
 library(poissonreg)
 tidymodels_prefer()
+
+# To prevent connection lost
+unregister_dopar <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
+}
+
+unregister_dopar()
 ```
 
 ## Read in Data and Cleaning
