@@ -564,9 +564,12 @@ boost_fit
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
 ```{r Poisson Lasso}
+set.seed(123457)
+# subsetting train dataset. excluding ISO3 and Year
+train_sub <- train %>% select(-c(ISO3))
 # Poisson Generalized Linear Regression Model with Lasso Penalty
 poi_recipe <- recipe(Disaster_Frequency ~., data = train_sub) %>%
-  step_dummy(all_factor_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
   step_normalize(all_predictors())
 # defining model using poisson_reg()
 poi_parsnip <-  poisson_reg(penalty = "lasso") %>%
@@ -601,7 +604,7 @@ poi_fitted
 set.seed(123457)
 # defining recipe
 poi_recipe_enp <- recipe(Disaster_Frequency ~., data = train_sub) %>%
-  step_dummy(all_factor_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
   step_normalize(all_predictors())
 # defining model using poisson_reg with elastic net penalty
 poi_parsnip_enp <-  poisson_reg(penalty = "elastic_net") %>%
