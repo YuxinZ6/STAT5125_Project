@@ -294,14 +294,16 @@ scatterplot_df %>% ggplot(aes(x = log(emission + 0.0001),
   facet_wrap(~Year) +
   ylab("Disaster Count") + 
   xlab("Log of Emission (Log of Metric Tons of CO2)") +
-  ggtitle("Emission versus Disaster Count for Each Country")
+  ggtitle("Emission versus Disaster Count for Each Country and Country
+with Greater than 10 Diasters")
 ```
 
 ```{r Disaster By Year for Each Country}
 df_aggregate_1 <- df_long %>% 
   group_by(Year, ISO3) %>% 
-  summarise(total_disaster = sum(Disaster_Frequency)) %>%
-  filter(total_disaster > 500)
+  reframe(total_disaster = first(Disaster_Frequency)) %>%
+  group_by(Year) %>%
+  slice_max(total_disaster, n = 10)
 
 # convert Year to numeric
 df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
@@ -310,7 +312,7 @@ df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
 ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
   geom_line() +
   geom_point() +
-  labs(title = "Count of Disaster by Year for Each Country (disasters > 500)",
+  labs(title = "Count of Disaster by Year for Top 10 Country with Most Diasters",
        x = "Year", 
        y = "Sum of Disaster",
        color = "Country") 
@@ -318,8 +320,10 @@ ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
 
 ```{r Disaster By Year}
 df_aggregate_2 <- df_wide %>% 
+  group_by(Year, ISO3) %>% 
+  reframe(diaster_count = first(Disaster_Frequency)) %>%
   group_by(Year) %>% 
-  summarize(total_disaster_frequency = sum(Disaster_Frequency))
+  summarize(total_disaster_frequency = sum(diaster_count))
 
 # converting Year to numeric
 df_aggregate_2$Year <- as.numeric(as.character(df_aggregate_2$Year))
@@ -353,15 +357,35 @@ ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) +
   ) 
 ```
 
+```{r data prep for map visualization}
+# rename the Country to match Country names stored in the world data
+Country_label <- Country_label %>% 
+  mutate(Country = if_else(Country == "China, P.R.: Hong Kong", "China", Country)) %>%
+  mutate(Country = if_else(Country == "China, P.R.: Mainland", "China", Country)) %>%
+  mutate(Country = if_else(Country == "Taiwan Province of China", "Taiwan", Country)) %>%
+  mutate(Country = if_else(Country == "Korea, Rep. of", "South Korea", Country)) %>%
+  mutate(Country = if_else(Country == "Netherlands, The", "Nether", Country)) %>%
+  mutate(Country = if_else(Country == "Poland, Rep. of", "Poland", Country)) %>%
+  mutate(Country = if_else(Country == "Russian Federation", "Russia", Country)) %>%
+  mutate(Country = if_else(Country == "Slovak Rep.", "Slovakia", Country)) %>%
+  mutate(Country = if_else(Country == "Slovenia, Rep. of", "Slovenia", Country)) %>%
+  mutate(Country = if_else(Country == "Estonia, Rep. of", "Estonia", Country)) %>%
+  mutate(Country = if_else(Country == "Czech Rep.", "Czech Republic", Country)) %>%
+  mutate(Country = if_else(Country == "Croatia, Rep. of", "Croatia", Country)) %>%
+  mutate(Country = if_else(Country == "United States", "USA", Country))
+```
+
 ```{r Map of CO2 Emisions}
 library(maps)
 world <- map_data("world")
 
-bind <- df_long %>% left_join(Country_label, by="ISO3") %>% 
+bind <- df_long %>%
+  group_by(ISO3, Year, Category) %>%
+  reframe(Value = sum(Value)) %>% 
+  left_join(Country_label, by="ISO3") %>% 
   select(c(Country,Value)) %>% 
-  group_by(Country) %>% reframe(Value = sum(Value)) %>% 
-  # group_by(Country) %>% first(Value) %>% 
-  glimpse()
+  group_by(Country) %>% reframe(Value = sum(Value))
+  
 world <- world %>% full_join(bind, by = c("region" ="Country"))
 world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 
