@@ -26,6 +26,7 @@ library(ggplot2)
 library(xgboost)
 library(yardstick)
 library(kknn)
+library(poissonreg)
 tidymodels_prefer()
 ```
 
