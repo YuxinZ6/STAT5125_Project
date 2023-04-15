@@ -726,14 +726,14 @@ knn_20 <- knn_workflow_20 %>% fit(train)
 knn_val1<- knn_workflow_5 %>%
   fit_resamples(
     resamples = vfold_cv(train, v = 10),
-    metrics = metric_set(rmse, rsq, mae,rsq_trad),
+    metrics = metric_set(rmse, rsq, mae),
   )
 knn_val1 %>% collect_metrics()
 # k=10
 knn_val2 <- knn_workflow_10 %>%
   fit_resamples(
     resamples = vfold_cv(train, v = 10),
-    metrics = metric_set(rmse, rsq, mae,rsq_trad),
+    metrics = metric_set(rmse, rsq, mae),
   )
 knn_val2 %>% collect_metrics()
 
@@ -741,7 +741,7 @@ knn_val2 %>% collect_metrics()
 knn_val3 <- knn_workflow_10 %>%
   fit_resamples(
     resamples = vfold_cv(train, v = 10),
-    metrics = metric_set(rmse, rsq, mae,rsq_trad),
+    metrics = metric_set(rmse, rsq, mae),
   )
 knn_val3 %>% collect_metrics()
 
@@ -761,14 +761,14 @@ metrics_knn
 knn_val1t<- knn_workflow_5t %>%
   fit_resamples(
     resamples = vfold_cv(test, v = 10),
-    metrics = metric_set(rmse,mae,rsq_trad),
+    metrics = metric_set(rmse,mae,rsq),
   )
 knn_val1t %>% collect_metrics()
 # k=10
 knn_val2t <- knn_workflow_10t %>%
   fit_resamples(
     resamples = vfold_cv(test, v = 10),
-    metrics = metric_set(rmse,mae,rsq_trad),
+    metrics = metric_set(rmse,mae,rsq),
   )
 knn_val2t %>% collect_metrics()
 
@@ -776,7 +776,7 @@ knn_val2t %>% collect_metrics()
 knn_val3t <- knn_workflow_20t %>%
   fit_resamples(
     resamples = vfold_cv(test, v = 10),
-    metrics = metric_set(rmse,mae,rsq_trad),
+    metrics = metric_set(rmse,mae,rsq),
   )
 knn_val3t %>% collect_metrics()
 
