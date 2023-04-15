@@ -23,7 +23,7 @@ poi_workflow <- workflow() %>%
 poi_result <- poi_workflow %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
-    metrics = metric_set(rmse, rsq, rsq_trad),
+    metrics = metric_set(rmse, rsq, rsq_trad, mae),
     
   )
 # showing results 
@@ -54,7 +54,7 @@ poi_workflow_enp <- workflow() %>%
 poi_result_enp <- poi_workflow_enp %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
-    metrics = metric_set(rmse, rsq, rsq_trad),
+    metrics = metric_set(rmse, rsq, rsq_trad, mae),
     
   )
 # showing results
