@@ -246,6 +246,9 @@ set.seed(123457)
 df_split <- df_wide %>% initial_split(prop = 0.8)
 train <- df_split %>% training()
 test <- df_split %>% testing()
+
+train_sub <- train %>% select(-c(ISO3))
+test_sub <- test %>% select(-c(ISO3))
 ```
 
 # Defining the Research Question
@@ -423,7 +426,7 @@ parsnip_RF <- rand_forest(mtry = tune("mtry"),
 # define random forest recipe, code all nominal predictors dummy variables and 
 # normalize all numeric predictors.
 RF_recipe <- 
-  recipe(formula = Disaster_Frequency ~ ., data = train) %>% 
+  recipe(formula = Disaster_Frequency ~ ., data = train_sub) %>% 
   step_dummy(all_nominal_predictors()) %>% 
   step_normalize(all_numeric_predictors())
 
@@ -437,7 +440,7 @@ hyperparam_tune_grid <- crossing(min_n = seq(10, 50, by = 20),
                                  mtry = seq(10, 50, by = 20),
                                  trees = c(100, 500, 1000))
 # define cross validation
-rf_cv <- train %>% vfold_cv(v = 10, times = 2)
+rf_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
 RF_metrics <- metric_set(rmse, mae, rsq)
 ```
@@ -466,7 +469,6 @@ save(rf_tuning, file = "RandomForest_Prediction.rds")
 
 ```{r Random Forest Result}
 RF_prediction <- load("RandomForest_Prediction.rds")
-rf_tuning 
 
 # selecting the best hyperparameter combination
 Best_result1 <- rf_tuning %>% 
@@ -492,12 +494,12 @@ workflow_RF_train <- workflow() %>%
   add_recipe(RF_recipe)
 
 # fit to the train data
-RF_fit <- workflow_RF_train %>% fit(data = train) 
+RF_fit <- workflow_RF_train %>% fit(data = train_sub) 
 RF_fit 
 
 # predict the test set and evaluate
-RF_fit %>% predict(test) %>% 
-  mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+RF_fit %>% predict(test_sub) %>% 
+  mutate(truth =test_sub$Disaster_Frequency, estimate = .pred) %>%
   RF_metrics(truth = truth, estimate = .pred)
 
 ```
@@ -517,7 +519,7 @@ parsnip_boost <- boost_tree(tree_depth = tune("tree_depth"),
 # define recipe for boosting, one hot encode dummy variable for nominal predictors
 # and normalize all numeric predictors. 
 boost_recipe <- 
-  recipe(formula = Disaster_Frequency ~ ., data = train) %>% 
+  recipe(formula = Disaster_Frequency ~ ., data = train_sub) %>% 
   step_dummy(all_nominal_predictors()) %>% 
   step_normalize(all_numeric_predictors())
 
@@ -532,7 +534,7 @@ hyperparam_tune_grid_boost <- crossing(min_n = seq(10, 50, by = 20),
                                        tree_depth = c(5, 10, 15),
                                        learn_rate = c(0.01, 0.05, 0.1))
 # define cross validation
-boost_cv <- train %>% vfold_cv(v = 10, times = 2)
+boost_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
 boost_metrics <- metric_set(rmse, mae, rsq)
 ```
@@ -561,7 +563,6 @@ save(boost_tuning, file = "XGBoost_Prediction.rds")
 
 ```{r XG-Boost Result}
 Boost_prediction <- load("XGBoost_Prediction.rds")
-boost_tuning 
 
 Best_result3 <- boost_tuning %>% 
   group_by(.metric) %>% 
@@ -583,7 +584,7 @@ workflow_Boost_train <- workflow() %>%
   add_recipe(boost_recipe)
 
 # fit to the train data
-boost_fit <- workflow_Boost_train %>% fit(data = train) 
+boost_fit <- workflow_Boost_train %>% fit(data = train_sub) 
 boost_fit 
 ```
 
@@ -603,12 +604,11 @@ workflow_Boost_train <- workflow() %>%
   add_recipe(boost_recipe)
 
 # fit to the train data
-boost_fit <- workflow_Boost_train %>% fit(data = train) 
-boost_fit 
+boost_fit <- workflow_Boost_train %>% fit(data = train_sub) 
 
 # predict the test set and evaluate
-boost_fit %>% predict(test) %>% 
-  mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+boost_fit %>% predict(test_sub) %>% 
+  mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
 ```
 
@@ -636,7 +636,7 @@ poi_workflow <- workflow() %>%
 poi_result <- poi_workflow %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
-    metrics = metric_set(rmse, rsq, rsq_trad)
+    metrics = metric_set(rmse, rsq, mae)
     )
     
 ```
@@ -645,18 +645,9 @@ poi_result <- poi_workflow %>%
 # showing results 
 poi_result %>% collect_metrics()
 
-poi_fitted <- poi_workflow %>% fit(test)
+poi_fitted <- poi_workflow %>% fit(train_sub)
 poi_fitted
 ```
-
-```{r}
-  # predict on test test
-  poi_prediction_1 <- poi_fitted %>% predict(test)
-  poi_prediction_1
-```
-
-
-
 
 
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
@@ -692,22 +683,17 @@ poi_result_enp %>% collect_metrics()
 ```
 
 ```{r}
-    #fitting model on test 
-    poi_fitted_enp <- poi_workflow_enp %>% fit(test)
-    poi_fitted_enp
+#fitting model on train
+poi_fitted_enp <- poi_workflow_enp %>% fit(train_sub)
+poi_fitted_enp 
 ```
 
-```{r}
-    # predict on test test
-  poi_prediction_2 <- poi_fitted_enp %>% predict(test)
-  poi_prediction_2
-```
 
 ```{r}
 # poisson with lasso, preediction on test set
 goal_metrics <- metric_set(rmse, rsq, mae)
 # predict on test test
-poi_prediction_1 <- poi_fitted %>% predict(test) %>%
+poi_prediction_1 <- poi_fitted %>% predict(test_sub) %>%
                     mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
                     goal_metrics(truth = truth, estimate = .pred)
 poi_prediction_1
@@ -717,7 +703,7 @@ poi_prediction_1
 # poisson with elastic net, preediction on test set
 goal_metrics <- metric_set(rmse, rsq, mae)
 # predict on test test
-poi_prediction_2 <- poi_fitted_enp %>% predict(test) %>%
+poi_prediction_2 <- poi_fitted_enp %>% predict(test_sub) %>%
                     mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
                     goal_metrics(truth = truth, estimate = .pred)
 poi_prediction_2
@@ -727,8 +713,6 @@ poi_prediction_2
 ```{r K-nearest}
 # Set seed
 set.seed(123457)
-train_sub <- train %>% select(-c(ISO3))
-test_sub <- test %>% select(-c(ISO3))
 # k=5 
 knn_parsnip_5 <- nearest_neighbor() %>% 
   set_mode("regression") %>%
@@ -900,3 +884,5 @@ metrics_knn_held <- bind_rows(
 metrics_knn_held 
 ```
 
+# Conclusion
+- reciting what is our best model. 
