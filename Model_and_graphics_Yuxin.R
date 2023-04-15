@@ -44,8 +44,9 @@ parsnip_RF <- rand_forest(mtry = tune("mtry"),
 # normalize all numeric predictors.
 RF_recipe <- 
   recipe(formula = Disaster_Frequency ~ ., data = train) %>% 
-  step_dummy(all_nominal_predictors()) %>% 
-  step_normalize(all_numeric_predictors())
+  step_pca(all_numeric_predictors(), num_comp = 5)%>% 
+  step_normalize(all_numeric_predictors()) %>%
+  step_dummy(all_nominal_predictors())
 
 # define workflow
 workflow_RF <- workflow() %>% 
@@ -59,7 +60,7 @@ hyperparam_tune_grid <- crossing(min_n = seq(10, 50, by = 20),
 # define cross validation
 rf_cv <- train %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
-RF_metrics <- metric_set(rmse, mae, rsq_trad)
+RF_metrics <- metric_set(rmse, mae, rsq)
 ################################
 # assigning resources
 cl <- makePSOCKcluster(6)
@@ -85,15 +86,9 @@ rf_tuning
 
 # selecting the best hyperparameter combination
 Best_result1 <- rf_tuning %>% 
-  filter(!(.metric == "rsq_trad")) %>%
   group_by(.metric) %>% 
   slice_min(mean)
-Best_result2 <- rf_tuning %>% 
-  filter(.metric == "rsq_trad") %>%
-  group_by(.metric) %>% 
-  slice_max(mean)
-Best_result <- Best_result1 %>% rbind(Best_result2)
-Best_result
+Best_result1
 #################################
 # Fitting the train data with best hyperparameter combination
 # Since both rmse and rsq_trad supports mtry = 50, trees = 1000, 
@@ -140,8 +135,9 @@ parsnip_boost <- boost_tree(tree_depth = tune("tree_depth"),
 # and normalize all numeric predictors. 
 boost_recipe <- 
   recipe(formula = Disaster_Frequency ~ ., data = train) %>% 
-  step_dummy(all_nominal_predictors()) %>% 
-  step_normalize(all_numeric_predictors())
+  step_normalize(all_numeric_predictors()) %>% 
+  step_pca(all_numeric_predictors(), num_comp = 5)%>% 
+  step_dummy(all_nominal_predictors())
 
 
 # define workflow
@@ -156,7 +152,7 @@ hyperparam_tune_grid_boost <- crossing(min_n = seq(10, 50, by = 20),
 # define cross validation
 boost_cv <- train %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
-boost_metrics <- metric_set(rmse, mae, rsq_trad)
+boost_metrics <- metric_set(rmse, mae, rsq)
 ################################
 # assigning resources
 cl <- makePSOCKcluster(6)
@@ -182,15 +178,9 @@ Boost_prediction <- load("XGBoost_Prediction.rds")
 boost_tuning 
 
 Best_result3 <- boost_tuning %>% 
-  filter(!(.metric == "rsq_trad")) %>%
   group_by(.metric) %>% 
   slice_min(mean)
-Best_result4 <- boost_tuning %>% 
-  filter(.metric == "rsq_trad") %>%
-  group_by(.metric) %>% 
-  slice_max(mean)
-Best_result5 <- Best_result3 %>% rbind(Best_result4)
-Best_result5
+Best_result3
 #################################
 # Fitting the train data with best hyperparameter combination
 # all metrics support the combination of min_n = 10, 

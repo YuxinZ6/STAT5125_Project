@@ -235,7 +235,9 @@ df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"),
 # convert year from character to factor
 df_wide <- df_wide %>% 
   mutate(Year = as.factor(Year))
-# rm(df_long, df)
+
+# save(df_wide, file = "df_wide.csv")
+# save(df_long, file = "df_long.csv")
 ```
 
 ## Train Test Splitting
@@ -468,15 +470,10 @@ rf_tuning
 
 # selecting the best hyperparameter combination
 Best_result1 <- rf_tuning %>% 
-  filter(!(.metric == "rsq_trad")) %>%
   group_by(.metric) %>% 
   slice_min(mean)
-Best_result2 <- rf_tuning %>% 
-  filter(.metric == "rsq_trad") %>%
-  group_by(.metric) %>% 
-  slice_max(mean)
-Best_result <- Best_result1 %>% rbind(Best_result2)
-Best_result
+
+Best_result1
 ```
 
 ```{r Random Forest Prediction}
@@ -548,15 +545,9 @@ Boost_prediction <- load("XGBoost_Prediction.rds")
 boost_tuning 
 
 Best_result3 <- boost_tuning %>% 
-  filter(!(.metric == "rsq_trad")) %>%
   group_by(.metric) %>% 
   slice_min(mean)
-Best_result4 <- boost_tuning %>% 
-  filter(.metric == "rsq_trad") %>%
-  group_by(.metric) %>% 
-  slice_max(mean)
-Best_result5 <- Best_result3 %>% rbind(Best_result4)
-Best_result5
+Best_result3
 
 # Fitting the train data with best hyperparameter combination
 # all metrics support the combination of min_n = 10, 
@@ -654,7 +645,7 @@ poi_workflow_enp <- workflow() %>%
 poi_result_enp <- poi_workflow_enp %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
-    metrics = metric_set(rmse, rsq, rsq_trad),
+    metrics = metric_set(rmse, rsq, mae),
     )
 ```
 
@@ -675,6 +666,25 @@ poi_result_enp %>% collect_metrics()
   poi_prediction_2
 ```
 
+```{r}
+# poisson with lasso, preediction on test set
+goal_metrics <- metric_set(rmse, rsq, mae)
+# predict on test test
+poi_prediction_1 <- poi_fitted %>% predict(test) %>%
+                    mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+                    goal_metrics(truth = truth, estimate = .pred)
+poi_prediction_1
+
+
+
+# poisson with elastic net, preediction on test set
+goal_metrics <- metric_set(rmse, rsq, mae)
+# predict on test test
+poi_prediction_2 <- poi_fitted_enp %>% predict(test) %>%
+                    mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+                    goal_metrics(truth = truth, estimate = .pred)
+poi_prediction_2
+```
 
 ##  K-Nearest Neighbors Regression
 ```{r K-nearest}
