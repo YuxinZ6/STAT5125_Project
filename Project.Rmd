@@ -477,10 +477,29 @@ Best_result1
 ```
 
 ```{r Random Forest Prediction}
+# Fitting the train data with best hyperparameter combination
+# Since both rmse and rsq_trad supports mtry = 50, trees = 1000, 
+# and min_n = 10, we fit that to the train set. 
+parsnip_RF_train <- rand_forest(mtry = 50,
+                                trees = 1000,
+                                min_n = 10) %>%
+  set_engine('randomForest') %>%
+  set_mode('regression')
+
+# define workflow
+workflow_RF_train <- workflow() %>% 
+  add_model(parsnip_RF_train) %>%
+  add_recipe(RF_recipe)
+
+# fit to the train data
+RF_fit <- workflow_RF_train %>% fit(data = train) 
+RF_fit 
+
 # predict the test set and evaluate
 RF_fit %>% predict(test) %>% 
   mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
   RF_metrics(truth = truth, estimate = .pred)
+
 ```
 
 ## XG-Boosting
@@ -569,6 +588,24 @@ boost_fit
 ```
 
 ```{r XG-Boostnig Prediction} 
+# Fitting the train data with best hyperparameter combination
+# all metrics support the combination of min_n = 10, 
+# tree_depth = 10, and learn_rate = 0.1, we use it as our model for train set. 
+parsnip_Boost_train <- boost_tree(tree_depth = 10, 
+                                  learn_rate = 0.1, 
+                                  min_n = 10) %>%
+  set_engine('xgboost') %>%
+  set_mode('regression')
+
+# define workflow
+workflow_Boost_train <- workflow() %>% 
+  add_model(parsnip_Boost_train) %>%
+  add_recipe(boost_recipe)
+
+# fit to the train data
+boost_fit <- workflow_Boost_train %>% fit(data = train) 
+boost_fit 
+
 # predict the test set and evaluate
 boost_fit %>% predict(test) %>% 
   mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
@@ -860,6 +897,6 @@ metrics_knn_held <- bind_rows(
 ```
 
 ```{r K-Nearest Heldout Metrics}
-metrics_knn_held
+metrics_knn_held 
 ```
 
