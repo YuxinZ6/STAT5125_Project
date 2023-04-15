@@ -650,8 +650,11 @@ poi_fitted
 ```
 
 ```{r}
+     goal_metrics <- metric_set(rmse, rsq, mae)
   # predict on test test
-  poi_prediction_1 <- poi_fitted %>% predict(test)
+  poi_prediction_1 <- poi_fitted %>% predict(test) %>%
+                      mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+                      goal_metrics(truth = truth, estimate = .pred)
   poi_prediction_1
 ```
 
@@ -698,8 +701,12 @@ poi_result_enp %>% collect_metrics()
 ```
 
 ```{r}
+    #metrics
+    goal_metrics <- metric_set(rmse, rsq, mae)
     # predict on test test
-  poi_prediction_2 <- poi_fitted_enp %>% predict(test)
+  poi_prediction_2 <- poi_fitted_enp %>% predict(test) %>%
+                      mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
+                      goal_metrics(truth = truth, estimate = .pred)
   poi_prediction_2
 ```
 
