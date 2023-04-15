@@ -608,7 +608,8 @@ poi_workflow <- workflow() %>%
 poi_result <- poi_workflow %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
-    metrics = metric_set(rmse, rsq, rsq_trad))
+    metrics = metric_set(rmse, rsq, rsq_trad)
+    )
     
 ```
 
@@ -616,9 +617,19 @@ poi_result <- poi_workflow %>%
 # showing results 
 poi_result %>% collect_metrics()
 
-poi_fitted <- poi_workflow %>% fit(train_sub)
+poi_fitted <- poi_workflow %>% fit(test)
 poi_fitted
 ```
+
+```{r}
+  # predict on test test
+  poi_prediction_1 <- poi_fitted %>% predict(test)
+  poi_prediction_1
+```
+
+
+
+
 
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
 ```{r Poisson Elastic Net}
@@ -651,6 +662,19 @@ poi_result_enp <- poi_workflow_enp %>%
 # showing results
 poi_result_enp %>% collect_metrics()
 ```
+
+```{r}
+    #fitting model on test 
+    poi_fitted_enp <- poi_workflow_enp %>% fit(test)
+    poi_fitted_enp
+```
+
+```{r}
+    # predict on test test
+  poi_prediction_2 <- poi_fitted_enp %>% predict(test)
+  poi_prediction_2
+```
+
 
 ##  K-Nearest Neighbors Regression
 ```{r K-nearest}
