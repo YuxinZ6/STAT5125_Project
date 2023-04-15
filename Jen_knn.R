@@ -16,7 +16,7 @@ library(ggplot2)
 # Set seed
 set.seed(123457)
 
-# k=5 with standardization
+# k=5 
 knn_parsnip_5 <- nearest_neighbor() %>% 
   set_mode("regression") %>%
   set_engine("kknn", neighbors = 5)
@@ -33,7 +33,7 @@ knn_workflow_5 <- workflow() %>%
 knn_5s <- knn_workflow_5 %>% fit(train)
 
 
-# k=10 with standardization
+# k=10 
 knn_parsnip_10 <- nearest_neighbor() %>% 
   set_mode("regression") %>%
   set_engine("kknn", neighbors = 10)
@@ -50,7 +50,7 @@ knn_workflow_10 <- workflow() %>%
 knn_10 <- knn_workflow_10 %>% fit(train)
 
 
-# k=20 with standardization
+# k=20
 knn_parsnip_20 <- nearest_neighbor() %>% 
   set_mode("regression") %>%
   set_engine("kknn", neighbors = 20)
@@ -100,6 +100,93 @@ metrics_knn <- bind_rows(
 )
 metrics_knn
 
+##### Holdout Validation #####
+# AUC-ROC and mse?
+metric_held <- metric_set(accuracy, mcc, sensitivity, specificity)
+
+# k=5 
+knn_parsnip_5t <- nearest_neighbor() %>% 
+  set_mode("regression") %>%
+  set_engine("kknn", neighbors = 5)
+
+knn_recipe_5t <- recipe(Disaster_Frequency ~ .,
+                       data = test) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+
+knn_workflow_5t <- workflow() %>%
+  add_model(knn_parsnip_5t) %>%
+  add_recipe(knn_recipe_5t)
+
+knn_5t <- knn_workflow_5t %>% fit(test)
+
+# k=10 
+knn_parsnip_10t <- nearest_neighbor() %>% 
+  set_mode("regression") %>%
+  set_engine("kknn", neighbors = 10)
+
+knn_recipe_10t <- recipe(Disaster_Frequency ~ .,
+                        data = test) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+
+knn_workflow_10t <- workflow() %>%
+  add_model(knn_parsnip_10t) %>%
+  add_recipe(knn_recipe_10t)
+
+knn_10t <- knn_workflow_10t %>% fit(test)
+
+
+# k=20 with standardization
+knn_parsnip_20t <- nearest_neighbor() %>% 
+  set_mode("regression") %>%
+  set_engine("kknn", neighbors = 20)
+
+knn_recipe_20t <- recipe(Disaster_Frequency ~ .,
+                        data = test) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+
+knn_workflow_20t <- workflow() %>%
+  add_model(knn_parsnip_20t) %>%
+  add_recipe(knn_recipe_20t)
+
+knn_20t <- knn_workflow_20t %>% fit(test)
+
+
+# validation
+# k=5
+knn_val1t<- knn_workflow_5t %>%
+  fit_resamples(
+    resamples = vfold_cv(test, v = 10),
+    metrics = metric_set(rmse,mae,rsq_trad),
+  )
+knn_val1t %>% collect_metrics()
+# k=10
+knn_val2t <- knn_workflow_10t %>%
+  fit_resamples(
+    resamples = vfold_cv(test, v = 10),
+    metrics = metric_set(rmse,mae,rsq_trad),
+  )
+knn_val2t %>% collect_metrics()
+
+# k=20
+knn_val3t <- knn_workflow_20t %>%
+  fit_resamples(
+    resamples = vfold_cv(test, v = 10),
+    metrics = metric_set(rmse,mae,rsq_trad),
+  )
+knn_val3t %>% collect_metrics()
+
+
+metrics_knn_held <- bind_rows(
+  knn_val1t %>% collect_metrics(),
+  knn_val2t %>% collect_metrics(),
+  knn_val3t %>% collect_metrics(),
+  .id = "Out of Sample"
+)
+metrics_knn_held
+
 
 ##### Visuals #####
 # Map maybe 
@@ -141,4 +228,4 @@ ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   coord_fixed() + 
   ggtitle("Map of CO2 Emission Recorded in Dataset") +
   labs(fill='Log of Metric \nTons of CO2 \nEmission')
-  
+

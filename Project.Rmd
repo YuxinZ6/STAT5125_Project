@@ -732,3 +732,41 @@ metrics_knn
 
 ```
 
+
+```{r K-Nearest Heldout Vaidation, eval=FALSE}
+knn_val1t<- knn_workflow_5t %>%
+  fit_resamples(
+    resamples = vfold_cv(test, v = 10),
+    metrics = metric_set(rmse,mae,rsq_trad),
+  )
+knn_val1t %>% collect_metrics()
+# k=10
+knn_val2t <- knn_workflow_10t %>%
+  fit_resamples(
+    resamples = vfold_cv(test, v = 10),
+    metrics = metric_set(rmse,mae,rsq_trad),
+  )
+knn_val2t %>% collect_metrics()
+
+# k=20
+knn_val3t <- knn_workflow_20t %>%
+  fit_resamples(
+    resamples = vfold_cv(test, v = 10),
+    metrics = metric_set(rmse,mae,rsq_trad),
+  )
+knn_val3t %>% collect_metrics()
+
+
+metrics_knn_held <- bind_rows(
+  knn_val1t %>% collect_metrics(),
+  knn_val2t %>% collect_metrics(),
+  knn_val3t %>% collect_metrics(),
+  .id = "Out of Sample"
+)
+```
+
+
+```{r K-Nearest Heldout Metrics}
+metrics_knn_held
+```
+
