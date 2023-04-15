@@ -439,7 +439,7 @@ hyperparam_tune_grid <- crossing(min_n = seq(10, 50, by = 20),
 # define cross validation
 rf_cv <- train %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
-RF_metrics <- metric_set(rmse, mae, rsq_trad)
+RF_metrics <- metric_set(rmse, mae, rsq)
 ```
 
 ```{r Random Forest Continued, eval = FALSE}
@@ -534,7 +534,7 @@ hyperparam_tune_grid_boost <- crossing(min_n = seq(10, 50, by = 20),
 # define cross validation
 boost_cv <- train %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
-boost_metrics <- metric_set(rmse, mae, rsq_trad)
+boost_metrics <- metric_set(rmse, mae, rsq)
 ```
 
 ```{r XG-Boosting Continued, eval=FALSE}
