@@ -248,21 +248,23 @@ df %>% mutate_at("Year", as.factor)
 # remove data not going to be used
 rm(ECCD_df, disasters_frequency)
 
-
-
 #####More Manipulation to the Dataset#####
+# relocating Year to the first 
 df <- df %>% relocate(Year, .before = Sector_abb)
+# replace all na with 0
 df <- df %>% mutate_all(~ ifelse(is.na(.), 0, .))
+# renaming the branches
 df <- df %>% rename(Export_Domestics = ECBIXD,
                            Export_Foreign = ECBIXF,
                            Output_Domestic = ECBIOD,
                            Output_Foreign = ECBIOF,
                            Disaster_Frequency = ECCD)
 
-
+# pivot longer the branches
 df_long <- df %>% pivot_longer(cols = Export_Domestics:Output_Foreign,
                            names_to = "Category",
                            values_to = "Value")
+# pivot wider the combinations of branches and category
 df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"), 
                                    values_from = Value, 
                                    values_fill = 0,
@@ -282,10 +284,12 @@ There are two tidy versions of the data sets saved under df_long and df_wide. Df
 We decide to do an 80-20 split of the train and test data set. 
 ```{r Train Test Splitting}
 set.seed(123457)
+# train test split by assigning 80% to train and remaining 20% to test
 df_split <- df_wide %>% initial_split(prop = 0.8)
 train <- df_split %>% training()
 test <- df_split %>% testing()
 
+# dropping country indicator
 train_sub <- train %>% select(-c(ISO3))
 test_sub <- test %>% select(-c(ISO3))
 ```
@@ -327,7 +331,8 @@ graphics:
 # Visualizations
 Climate change is a global issue as it leads to higher natural disasters. The line graph depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
 
-```{r Disaster By Year}
+```{r Disaster By Year, fig.cap={"Diaster by year. Count of total disaster decreased from years $2005$ to $2008$. This is a decreasing trend because of we are focusing on a relatively short time span. "}}
+# prep dataframe for plot 
 df_aggregate_2 <- df_wide %>% 
   group_by(Year, ISO3) %>% 
   reframe(diaster_count = first(Disaster_Frequency)) %>%
