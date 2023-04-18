@@ -64,6 +64,7 @@ library(poissonreg)
 library(car)
 tidymodels_prefer()
 theme_set(theme_bw())
+
 # To prevent connection lost
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
@@ -84,15 +85,13 @@ The raw data consisted of 51 sectors many were related to each other. Sectors th
 # read the investment indicators dataset
 investment_indicators <- read_csv("11_Direct_Investment-related_Indicators.csv")
 
-# initial investigation in the dataset. 
-investment_indicators %>% glimpse()
 # subset the dataset to discard unwanted columns
 investment_indicators <- investment_indicators %>% 
   select(Country, ISO2, ISO3, Indicator, Unit, `CTS Code`, `CTS Name`, Sector,
          `2005`:`2018`)
 investment_indicators %>% glimpse()
 
-
+#########################################################################
 # creating dictionary for the country with ISO2 and ISO3. 
 Country_label <- investment_indicators %>% select(Country, ISO2, ISO3) %>% distinct()
 
@@ -112,7 +111,7 @@ Unit_label <- matrix(c("Metric tons of CO2", "MT",
                      ncol = 2, byrow = TRUE) %>% as.data.frame()
 colnames(Unit_label) <- c("Unit", "Unit_abb")
 
-
+#########################################################################
 # match Units in data set with its abbreviations, using the dictionary
 # match Sectors in data set with its abbreviations, using the dictionary
 investment_indicators <- investment_indicators %>% 
@@ -121,8 +120,7 @@ investment_indicators <- investment_indicators %>%
   relocate(Unit_abb, .before = Unit) %>% 
   mutate(Sector_abb = sapply(Sector, 
                              function(x) Sectors_label$label[match(x, Sectors_label$Sector)])) %>%
-  relocate(Sector_abb, .before = Sector) %>% 
-  glimpse()
+  relocate(Sector_abb, .before = Sector)
 
 # select the columns of interest, save it temporarily.
 tmp <- investment_indicators %>% select(ISO3, `CTS Code`, Sector_abb, 
@@ -136,6 +134,7 @@ emission_df <- tmp %>% pivot_longer(cols = `2005`:`2018`,
   select(-ECBIPF, -ECBIPD, -ECBIFR, -ECBIFF) %>% 
   mutate_all(~ ifelse(is.na(.), 0, .))
 
+#########################################################################
 # Combining some sectors that have overlaps
 emission_df <- emission_df %>%
   mutate(Sector_abb = if_else(Sector_abb %in% c("sector_1", 
@@ -184,7 +183,7 @@ emission_df <- emission_df %>%
   group_by(ISO3, Year, Sector_abb) %>%
   reframe(across(c(ECBIXD, ECBIXF, ECBIOD, ECBIOF), sum))
   
-
+#########################################################################
 # remove data that will not be used again
 rm(tmp, investment_indicators)
 
@@ -238,14 +237,13 @@ disasters_df <- disasters_frequency %>%
                values_to = "Count") %>%
   pivot_wider(names_from = `CTS Code`, 
               values_from = Count)
+```
 
-
-
+### Merge the Two Datasets
+```{r Combining the Two Datasets}
 #######Combining the two data sets#######
 df <- emission_df %>% left_join(disasters_df, by = c("ISO3", "Year"))
-df %>% 
-  mutate_at("Year", as.factor) %>%
-  glimpse()
+df %>% mutate_at("Year", as.factor)
 
 # remove data not going to be used
 rm(ECCD_df, disasters_frequency)
