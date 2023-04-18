@@ -61,6 +61,7 @@ library(xgboost)
 library(yardstick)
 library(kknn)
 library(poissonreg)
+library(car)
 tidymodels_prefer()
 theme_set(theme_bw())
 # To prevent connection lost
@@ -985,7 +986,7 @@ fitted_resid_plot <- plot(RF_train_predict$.pred, resid,
                           main = "Fitted versus Residuals")
 abline(h = 0, col = 'blue', lty = 2)
 
-# calcualte standard residuals
+# calculate standard residuals
 stand_resid <- (resid - mean(resid))/sd(resid)
 
 # fitted versus standard residual plot
@@ -1005,11 +1006,9 @@ qqPlot(stand_resid, main = "QQ-norm Plot",
 mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
 
-<<<<<<< HEAD
 
 # Uncertainty Quantification
-=======
->>>>>>> ae9fd43e9adf0e2e92312a4b7fd052d75769818f
+
 
 # Result Communication
 - reciting what is our best model. 
