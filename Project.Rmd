@@ -62,7 +62,7 @@ library(yardstick)
 library(kknn)
 library(poissonreg)
 tidymodels_prefer()
-
+theme_set(theme_bw())
 # To prevent connection lost
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
@@ -326,7 +326,8 @@ graphics:
   - because count of disaster goes by year, then we will need to aggregate the co2 emission by country and by year. so we sum all of the sectors and types of co2 emissions. 
 
 # Visualizations
-Climate change is a global issue as it leads to higher natural disasters. The line graph depicts the total disaster event by year on a global level.  
+Climate change is a global issue as it leads to higher natural disasters. The line graph depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
+
 ```{r Disaster By Year}
 df_aggregate_2 <- df_wide %>% 
   group_by(Year, ISO3) %>% 
@@ -348,6 +349,24 @@ ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
 
 Carbon dioxide is a greenhouse gas that traps heat in the atmosphere, leading to global warming and climate change. It is produce primarily from human activities such as burning fossil fuels for energy, transportation, and other industry sectors. Below is a map of CO2 emissions produce in each country with red being the higher end of the spectrum and white being little CO2 produced. 
 
+```{r data prep for map visualization}
+# rename the Country to match Country names stored in the world data
+Country_label <- Country_label %>% 
+  mutate(Country = if_else(Country == "China, P.R.: Hong Kong", "China", Country)) %>%
+  mutate(Country = if_else(Country == "China, P.R.: Mainland", "China", Country)) %>%
+  mutate(Country = if_else(Country == "Taiwan Province of China", "Taiwan", Country)) %>%
+  mutate(Country = if_else(Country == "Korea, Rep. of", "South Korea", Country)) %>%
+  mutate(Country = if_else(Country == "Netherlands, The", "Nether", Country)) %>%
+  mutate(Country = if_else(Country == "Poland, Rep. of", "Poland", Country)) %>%
+  mutate(Country = if_else(Country == "Russian Federation", "Russia", Country)) %>%
+  mutate(Country = if_else(Country == "Slovak Rep.", "Slovakia", Country)) %>%
+  mutate(Country = if_else(Country == "Slovenia, Rep. of", "Slovenia", Country)) %>%
+  mutate(Country = if_else(Country == "Estonia, Rep. of", "Estonia", Country)) %>%
+  mutate(Country = if_else(Country == "Czech Rep.", "Czech Republic", Country)) %>%
+  mutate(Country = if_else(Country == "Croatia, Rep. of", "Croatia", Country)) %>%
+  mutate(Country = if_else(Country == "United States", "USA", Country))
+```
+This data preparation is necessary for the map to join in order to include all the data points.
 ```{r Map of CO2 Emisions}
 library(maps)
 world <- map_data("world")
@@ -364,16 +383,39 @@ world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 
 ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   geom_polygon(color="gray") +
-  scale_fill_gradient(low = "white", high = "red") +
+  scale_fill_gradient(low = "lightgray", high = "red") +
   coord_fixed() + 
   ggtitle("Map of CO2 Emission Recorded in Dataset") +
   labs(fill='Log of Metric \nTons of CO2 \nEmission')
 ```
 It is depicted that developed countries, such as the United States, China, Russia, and parts of Europe, produces more CO2 emission than underdeveloped countries.
 
+After seeing the countries with prolific production of CO2 emission, we have suspects for those that may have higher frequency of natural disasters. The graph below counts the number of disasters by year colored based on countries. This figure confirms our suspicions of more disasters will occur in developed countries. 
 
+The top 3 countries with the most disasters are USA, China, and India.
 
-Our outcome variable is disaster frequency. In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this facet scatter plot, there is a lack of data for 2017 and 2018.
+```{r Disaster By Year for Each Country}
+df_aggregate_1 <- df_long %>% 
+  group_by(Year, ISO3) %>% 
+  reframe(total_disaster = first(Disaster_Frequency)) %>%
+  group_by(Year) %>%
+  slice_max(total_disaster, n = 10)
+
+# convert Year to numeric
+df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
+
+# ggplot using aggregate dataset
+ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Count of Disaster by Year for Top Countries with Most Diasters",
+       x = "Year", 
+       y = "Sum of Disaster",
+       color = "Country") 
+```
+
+In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this facet scatter plot, there is a lack of data for 2017 and 2018.
+
 ```{r Scatterplot}
 # optimize data for scatterplot
 scatterplot_df <- df_long %>% group_by(ISO3, Year) %>%
@@ -399,25 +441,7 @@ scatterplot_df %>% ggplot(aes(x = log(emission + 0.0001),
 with Greater than 10 Diasters")
 ```
 
-```{r Disaster By Year for Each Country}
-df_aggregate_1 <- df_long %>% 
-  group_by(Year, ISO3) %>% 
-  reframe(total_disaster = first(Disaster_Frequency)) %>%
-  group_by(Year) %>%
-  slice_max(total_disaster, n = 10)
 
-# convert Year to numeric
-df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
-
-# ggplot using aggregate dataset
-ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
-  geom_line() +
-  geom_point() +
-  labs(title = "Count of Disaster by Year for Top 10 Country with Most Diasters",
-       x = "Year", 
-       y = "Sum of Disaster",
-       color = "Country") 
-```
 
 
 
@@ -440,25 +464,6 @@ ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) +
     y = "Metric Tons of CO2 Emission"
   ) 
 ```
-
-```{r data prep for map visualization}
-# rename the Country to match Country names stored in the world data
-Country_label <- Country_label %>% 
-  mutate(Country = if_else(Country == "China, P.R.: Hong Kong", "China", Country)) %>%
-  mutate(Country = if_else(Country == "China, P.R.: Mainland", "China", Country)) %>%
-  mutate(Country = if_else(Country == "Taiwan Province of China", "Taiwan", Country)) %>%
-  mutate(Country = if_else(Country == "Korea, Rep. of", "South Korea", Country)) %>%
-  mutate(Country = if_else(Country == "Netherlands, The", "Nether", Country)) %>%
-  mutate(Country = if_else(Country == "Poland, Rep. of", "Poland", Country)) %>%
-  mutate(Country = if_else(Country == "Russian Federation", "Russia", Country)) %>%
-  mutate(Country = if_else(Country == "Slovak Rep.", "Slovakia", Country)) %>%
-  mutate(Country = if_else(Country == "Slovenia, Rep. of", "Slovenia", Country)) %>%
-  mutate(Country = if_else(Country == "Estonia, Rep. of", "Estonia", Country)) %>%
-  mutate(Country = if_else(Country == "Czech Rep.", "Czech Republic", Country)) %>%
-  mutate(Country = if_else(Country == "Croatia, Rep. of", "Croatia", Country)) %>%
-  mutate(Country = if_else(Country == "United States", "USA", Country))
-```
-
 
 # Modeling
 ## Random Forest
