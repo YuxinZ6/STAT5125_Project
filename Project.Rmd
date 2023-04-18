@@ -32,14 +32,16 @@ With 826 total observations and 59 combined variables, we hope to account for th
   - Data pre-processing and tidying (including test/train split)
   - Reasoning of research question
   - Visualizations
+      * Scatterplot
+      * 
   - Modeling:
       * Random Forest
       * XG-Boosting
       * Poisson Generalized Linear Regression with Lasso
       * Poisson Generalized Linear Regression with Elastic Net
       * K-Nearest Neighbor Regression
-  - Validation
-  - Conclusion
+  - Uncertainty Quantification
+  - Result Communication
 
 # Data Importing and Cleaning
 ## Set Up Environment
@@ -274,10 +276,11 @@ df_wide <- df_wide %>%
 # save(df_wide, file = "df_wide.csv")
 # save(df_long, file = "df_long.csv")
 ```
-There are two tidy versions of the data sets saved under df_long and df_wide. Df_long  
+There are two tidy versions of the data sets saved under df_long and df_wide. Df_long depicts the four variables of interest and df_wide stratifies the type of enterprises by sectors.
 
 
 ## Train Test Splitting
+We decide to do an 80-20 split of the train and test data set. 
 ```{r Train Test Splitting}
 set.seed(123457)
 df_split <- df_wide %>% initial_split(prop = 0.8)
@@ -323,6 +326,54 @@ graphics:
   - because count of disaster goes by year, then we will need to aggregate the co2 emission by country and by year. so we sum all of the sectors and types of co2 emissions. 
 
 # Visualizations
+Climate change is a global issue as it leads to higher natural disasters. The line graph depicts the total disaster event by year on a global level.  
+```{r Disaster By Year}
+df_aggregate_2 <- df_wide %>% 
+  group_by(Year, ISO3) %>% 
+  reframe(diaster_count = first(Disaster_Frequency)) %>%
+  group_by(Year) %>% 
+  summarize(total_disaster_frequency = sum(diaster_count))
+
+# converting Year to numeric
+df_aggregate_2$Year <- as.numeric(as.character(df_aggregate_2$Year))
+
+# ggplot using aggregate dataset
+ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
+  geom_line(color = "blue") +
+  geom_point(color = "blue") +
+  labs(title = "Total Disaster Frequency by Year ",
+       x = "Year",
+       y = "Sum Disaster Frequency")
+```
+
+Carbon dioxide is a greenhouse gas that traps heat in the atmosphere, leading to global warming and climate change. It is produce primarily from human activities such as burning fossil fuels for energy, transportation, and other industry sectors. Below is a map of CO2 emissions produce in each country with red being the higher end of the spectrum and white being little CO2 produced. 
+
+```{r Map of CO2 Emisions}
+library(maps)
+world <- map_data("world")
+
+bind <- df_long %>%
+  group_by(ISO3, Year, Category) %>%
+  reframe(Value = sum(Value)) %>% 
+  left_join(Country_label, by="ISO3") %>% 
+  select(c(Country,Value)) %>% 
+  group_by(Country) %>% reframe(Value = sum(Value))
+  
+world <- world %>% full_join(bind, by = c("region" ="Country"))
+world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
+
+ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
+  geom_polygon(color="gray") +
+  scale_fill_gradient(low = "white", high = "red") +
+  coord_fixed() + 
+  ggtitle("Map of CO2 Emission Recorded in Dataset") +
+  labs(fill='Log of Metric \nTons of CO2 \nEmission')
+```
+It is depicted that developed countries, such as the United States, China, Russia, and parts of Europe, produces more CO2 emission than underdeveloped countries.
+
+
+
+Our outcome variable is disaster frequency. In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this facet scatter plot, there is a lack of data for 2017 and 2018.
 ```{r Scatterplot}
 # optimize data for scatterplot
 scatterplot_df <- df_long %>% group_by(ISO3, Year) %>%
@@ -368,26 +419,9 @@ ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
        color = "Country") 
 ```
 
-```{r Disaster By Year}
-df_aggregate_2 <- df_wide %>% 
-  group_by(Year, ISO3) %>% 
-  reframe(diaster_count = first(Disaster_Frequency)) %>%
-  group_by(Year) %>% 
-  summarize(total_disaster_frequency = sum(diaster_count))
 
-# converting Year to numeric
-df_aggregate_2$Year <- as.numeric(as.character(df_aggregate_2$Year))
 
-# ggplot using aggregate dataset
-ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
-  geom_line(color = "blue") +
-  geom_point(color = "blue") +
-  labs(title = "Total Disaster Frequency by Year ",
-       x = "Year",
-       y = "Sum Disaster Frequency")
-```
-
-```{r CO2 Emissions by Type pf Enterprise}
+```{r CO2 Emissions by Type of Enterprise}
 df_agg <- df_long %>% 
   group_by(ISO3, Category) %>%
   reframe(emission = sum(`Value`)) %>%
@@ -425,27 +459,6 @@ Country_label <- Country_label %>%
   mutate(Country = if_else(Country == "United States", "USA", Country))
 ```
 
-```{r Map of CO2 Emisions}
-library(maps)
-world <- map_data("world")
-
-bind <- df_long %>%
-  group_by(ISO3, Year, Category) %>%
-  reframe(Value = sum(Value)) %>% 
-  left_join(Country_label, by="ISO3") %>% 
-  select(c(Country,Value)) %>% 
-  group_by(Country) %>% reframe(Value = sum(Value))
-  
-world <- world %>% full_join(bind, by = c("region" ="Country"))
-world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
-
-ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
-  geom_polygon(color="gray") +
-  scale_fill_gradient(low = "white", high = "red") +
-  coord_fixed() + 
-  ggtitle("Map of CO2 Emission Recorded in Dataset") +
-  labs(fill='Log of Metric \nTons of CO2 \nEmission')
-```
 
 # Modeling
 ## Random Forest
@@ -965,6 +978,7 @@ abline(h = 0, col = 'blue', lty = 2)
 # setting a common title
 mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
+
 
 # Uncertainty Quantification
 
