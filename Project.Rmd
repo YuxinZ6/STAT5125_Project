@@ -8,6 +8,17 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Introduction and Motivation
+Climate change is not a new problem. Although the earliest research was published in the late 1800s. This topic was not taken as a serious global issue until the 1960s.
+
+As the problem of climate change becomes increasingly urgent, data science is also being recognized as an essential tool in the fight against climate change. The skills in data science will allow better understanding of the complex interplay of various environmental factors and take proactive steps to reduce our impact on the planet.
+
+One of the main human impact worsening climate change is our carbon foot print. This leads the motivation of our project to analyze the CO2 emissions produced. The data is sourced from the International Monetary Fund climate change data dashboard. Their mission is to achieve sustainable growth and prosperity for all of its 190 member countries by supporting economic policies that promote financial stability and monetary cooperation, which are essential to increase productivity, job creation, and economic well-being. 
+
+With that said, this project will be analyzing the combination of two data sets; Direct Investment related indicators and Climate related disaster frequency.
+
+Our combine data consists of CO2 emissions 60 different countries spanning from 2005 to 2018 by 4 types of enterprise and 15 sectors. There are four types of enterprise of focus; exports of domestic controlled enterprises, exports of foreign controlled multinational enterprises, output of domestic controlled enterprises, and output of foreign controlled multinational enterprises.
+
 
 # Data Importing and Cleaning
 ## Set Up Environment
@@ -682,15 +693,15 @@ poi_result_enp <- poi_workflow_enp %>%
 poi_result_enp %>% collect_metrics()
 ```
 
-```{r}
+```{r Poisson Training Fits}
 #fitting model on train
 poi_fitted_enp <- poi_workflow_enp %>% fit(train_sub)
 poi_fitted_enp 
 ```
 
 
-```{r}
-# poisson with lasso, preediction on test set
+```{r Poisson Heldout Validation}
+# poisson with lasso, prediction on test set
 goal_metrics <- metric_set(rmse, rsq, mae)
 # predict on test test
 poi_prediction_1 <- poi_fitted %>% predict(test_sub) %>%
@@ -886,3 +897,8 @@ metrics_knn_held
 
 # Conclusion
 - reciting what is our best model. 
+
+
+
+# Citation
+International Monetary Fund. 2022.Climate Change Indicators Dashboard. Climate Change Data and , https://climatedata.imf.org/pages/access-data. Accessed on [2023-03-15].
