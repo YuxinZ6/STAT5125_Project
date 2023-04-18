@@ -2,7 +2,14 @@
 title: "STAT5125_Project_Yuxin_Jen_Rene"
 author: "Yuxin Zhang, Jennifer Nguyen, Rene Chang"
 date: "2023-03-31"
-output: pdf_document
+header-includes:
+  \usepackage{setspace}\doublespacing
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+urlcolor: blue
+fontsize: 11pt
 ---
 
 ```{r setup, include=FALSE}
@@ -453,7 +460,7 @@ hyperparam_tune_grid <- crossing(min_n = seq(10, 50, by = 20),
 # define cross validation
 rf_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
 # define metrics to be used
-RF_metrics <- metric_set(rmse, mae, rsq)
+RF_metrics <- metric_set(yardstick::rmse, mae, rsq)
 ```
 
 ```{r Random Forest Continued, eval = FALSE}
@@ -519,7 +526,7 @@ RF_train_predict_metric
 
 # predict the test set and evaluate
 RF_test_predict <- RF_fit %>% predict(test_sub) 
-RF_test_predict_metric <- RF_predict %>% 
+RF_test_predict_metric <- RF_test_predict %>% 
   mutate(truth =test_sub$Disaster_Frequency, estimate = .pred) %>%
   RF_metrics(truth = truth, estimate = .pred)
 RF_test_predict_metric
@@ -634,7 +641,7 @@ boost_fit %>% predict(test_sub) %>%
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
-```{r Poisson Lasso}
+```{r Poisson Lasso: define workflow}
 set.seed(123457)
 # subsetting train dataset. excluding ISO3 and Year
 train_sub <- train %>% select(-c(ISO3))
@@ -652,7 +659,7 @@ poi_workflow <- workflow() %>%
   add_recipe(poi_recipe)
 ```
 
-```{r Poisson Lasso}
+```{r Poisson Lasso: fitting}
 # Cross validation on train dataset
 poi_result <- poi_workflow %>%
   fit_resamples(
@@ -672,7 +679,7 @@ poi_fitted
 
 
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
-```{r Poisson Elastic Net}
+```{r Poisson Elastic Net: define workflow}
 #  Poisson Generalized Linear Model with Elastic Net Penalty
 set.seed(123457)
 # defining recipe
@@ -689,7 +696,7 @@ poi_workflow_enp <- workflow() %>%
   add_recipe(poi_recipe_enp)
 ```
 
-```{r Poisson Elastic Net}
+```{r Poisson Elastic Net: fitting}
 # cross validation on train dataset
 poi_result_enp <- poi_workflow_enp %>%
   fit_resamples(
@@ -928,7 +935,7 @@ fitted_resid_plot <- plot(RF_train_predict$.pred, resid,
                           xlab = "Fitted Values",
                           main = "Fitted versus Residuals")
 abline(h = 0, col = 'blue', lty = 2)
-#calcualte standard residuals
+#calculate standard residuals
 stand_resid <- (resid - mean(resid))/sd(resid)
 # fitted versus standard residual plot
 plot(RF_train_predict$.pred, stand_resid,
