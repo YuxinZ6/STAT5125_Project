@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # Introduction and Motivation
-Climate change is not a new problem. Although the earliest research was published in the late 1800s. This topic was not taken as a serious global issue until the 1960s.
+Climate change is not a new problem. Although the earliest research was published in the late 1800s, this topic was not taken as a serious global issue until the 1960s.
 
 As the problem of climate change becomes increasingly urgent, data science is also being recognized as an essential tool in the fight against climate change. The skills in data science will allow better understanding of the complex interplay of various environmental factors and take proactive steps to reduce our impact on the planet.
 
@@ -17,8 +17,22 @@ One of the main human impact worsening climate change is our carbon foot print. 
 
 With that said, this project will be analyzing the combination of two data sets; Direct Investment related indicators and Climate related disaster frequency.
 
-Our combine data consists of CO2 emissions 60 different countries spanning from 2005 to 2018 by 4 types of enterprise and 15 sectors. There are four types of enterprise of focus; exports of domestic controlled enterprises, exports of foreign controlled multinational enterprises, output of domestic controlled enterprises, and output of foreign controlled multinational enterprises.
+Our combine data consists of CO2 emissions (in Metric Tons) of 60 different countries spanning from 2005 to 2018 by 4 types of enterprise and 15 sectors. There are four types of enterprise of focus; exports of domestic controlled enterprises, exports of foreign controlled multinational enterprises, output of domestic controlled enterprises, and output of foreign controlled multinational enterprises.
 
+With 826 total observations and 59 combined variables, we hope to account for the frequency of disaster events by country and year with models listed below in the outline.
+
+## Outline
+  - Data pre-processing and tidying (including test/train split)
+  - Reasoning of research question
+  - Visualizations
+  - Modeling:
+      * Random Forest
+      * XG-Boosting
+      * Poisson Generalized Linear Regression with Lasso
+      * Poisson Generalized Linear Regression with Elastic Net
+      * K-Nearest Neighbor Regression
+  - Validation
+  - Conclusion
 
 # Data Importing and Cleaning
 ## Set Up Environment
@@ -51,8 +65,12 @@ unregister_dopar()
 
 ## Read in Data and Cleaning
 ### Cleaning Dataset 11_Direct_Investment-related_Indicators
+In order to organize the raw data, four different dictionaries were created and selected our variables of interest (Country, Year 2005 to 2018, Sector and Enterprise type).
+
+The raw data consisted of 51 sectors many were related to each other. Sectors that deemed to be related or in the same job family were combined. For example, "Mining and extraction of energy producing products","Mining and quarrying of non-energy producing products", and "Mining support service activities" were combined under mining.
+
 ```{r Cleaning dataset 11_Direct_Investment-related_Indicators}
-####### Cleaning dataset 11_Direct_Investment-related_Indicators #######
+####### Cleaning data set 11_Direct_Investment-related_Indicators #######
 # read the investment indicators dataset
 investment_indicators <- read_csv("11_Direct_Investment-related_Indicators.csv")
 
@@ -85,8 +103,8 @@ Unit_label <- matrix(c("Metric tons of CO2", "MT",
 colnames(Unit_label) <- c("Unit", "Unit_abb")
 
 
-# match Units in dataset with its abbreviations, using the dictionary
-# match Sectors in dataset with its abbreviations, using the dictionary
+# match Units in data set with its abbreviations, using the dictionary
+# match Sectors in data set with its abbreviations, using the dictionary
 investment_indicators <- investment_indicators %>% 
   mutate(Unit_abb = sapply(Unit, 
                            function(x) Unit_label$Unit_abb[match(x, Unit_label$Unit)])) %>%
@@ -160,13 +178,12 @@ emission_df <- emission_df %>%
 # remove data that will not be used again
 rm(tmp, investment_indicators)
 
-
-
 ### Summary: all dictionaries have ending with "_label". 
 ### We will be using emission_df for further analysis. 
 ```
 
 ### Cleaning Dataset 24_Climate-related_Diasters_Frequency
+The following shows the left join of the second data set "Climate-related_Diasters_Frequency" by country and year.
 ```{r Cleaning dataset 24_Climate-related_Diasters_Frequency}
 ####### Cleaning dataset 24_Climate-related_Diasters_Frequency#######
 disasters_frequency <- read_csv("24_Climate-related_Disasters_Frequency.csv")
@@ -250,6 +267,8 @@ df_wide <- df_wide %>%
 # save(df_wide, file = "df_wide.csv")
 # save(df_long, file = "df_long.csv")
 ```
+There are two tidy versions of the data sets saved under df_long and df_wide. Df_long  
+
 
 ## Train Test Splitting
 ```{r Train Test Splitting}
@@ -720,7 +739,7 @@ poi_prediction_2 <- poi_fitted_enp %>% predict(test_sub) %>%
 poi_prediction_2
 ```
 
-##  K-Nearest Neighbors Regression
+##  K-Nearest Neighbor Regression
 ```{r K-nearest}
 # Set seed
 set.seed(123457)
@@ -807,7 +826,7 @@ metrics_knn <- bind_rows(
 )
 metrics_knn
 ```
-```{rHeldout Metrics}
+```{r Heldout Metrics}
 # k=5 
 knn_parsnip_5t <- nearest_neighbor() %>% 
   set_mode("regression") %>%
