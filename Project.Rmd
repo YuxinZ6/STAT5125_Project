@@ -374,7 +374,7 @@ Country_label <- Country_label %>%
   mutate(Country = if_else(Country == "Czech Rep.", "Czech Republic", Country)) %>%
   mutate(Country = if_else(Country == "Croatia, Rep. of", "Croatia", Country)) %>%
   mutate(Country = if_else(Country == "United States", "USA", Country))
-# create dataframe for map
+# create data frame for map
 bind <- df_long %>%
   group_by(ISO3, Year, Category) %>%
   reframe(Value = sum(Value)) %>% 
@@ -484,7 +484,15 @@ In developed countries, output of domestic controlled enterprises produce the mo
 
 
 # Modeling
+The five models we have chosen are
+      * Random Forest
+      * XG-Boosting
+      * Poisson Generalized Linear Regression with Lasso
+      * Poisson Generalized Linear Regression with Elastic Net
+      * K-Nearest Neighbor Regression
+
 ## Random Forest
+
 ```{r Random Forest}
 # set the seed
 set.seed(123457)
@@ -721,7 +729,6 @@ poi_result <- poi_workflow %>%
     resamples = vfold_cv(train_sub, v = 10),
     metrics = metric_set(rmse, rsq, mae)
     )
-    
 ```
 
 ```{r Poisson Lasso Results}
