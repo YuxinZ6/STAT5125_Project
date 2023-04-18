@@ -331,7 +331,7 @@ graphics:
 # Visualizations
 Climate change is a global issue as it leads to higher natural disasters. The line graph depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
 
-```{r Disaster By Year, fig.cap={"Diaster by year. Count of total disaster decreased from years $2005$ to $2008$. This is a decreasing trend because of we are focusing on a relatively short time span. "}}
+```{r Disaster By Year, fig.cap={"Diaster by year. Count of total disaster decreased from years $2005$ to $2008$. This is a decreasing trend because of we are focusing on a relatively short time span. If one were to look at the count of diaster at a bigger time frame, one should see a general upward trend."}}
 # prep dataframe for plot 
 df_aggregate_2 <- df_wide %>% 
   group_by(Year, ISO3) %>% 
@@ -354,9 +354,11 @@ ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
 Carbon dioxide is a greenhouse gas that traps heat in the atmosphere, leading to global warming and climate change. It is produce primarily from human activities such as burning fossil fuels for energy, transportation, and other industry sectors. Below is a map of CO2 emissions produce in each country with red being the higher end of the spectrum and white being little CO2 produced. 
 
 ```{r data prep for map visualization}
+# load world data for map
 library(maps)
 world <- map_data("world")
 
+# data prepping for the map
 # rename the Country to match Country names stored in the world data
 Country_label <- Country_label %>% 
   mutate(Country = if_else(Country == "China, P.R.: Hong Kong", "China", Country)) %>%
@@ -383,11 +385,13 @@ bind <- df_long %>%
 # combine the two China values
 bind <- bind %>% group_by(Country) %>% summarize(Value = sum(Value))
 
+# join the two datasets
 world <- world %>% full_join(bind, by = c("region" ="Country"))
 world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 ```
 This data preparation is necessary for the map to join in order to include all the data points.
 ```{r Map of CO2 Emisions, fig.cap={"Map of CO$2$ emission recorded in our dataset. Fill is by log of metric tons of CO$2$ emission. Hue closer to red indicates more emission. "}}
+# plot the map, set emission as fill color. 
 ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   geom_polygon(color="gray") +
   scale_fill_gradient2(low = "lightgray", mid = "yellow", high = "red",
