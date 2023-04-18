@@ -32,7 +32,7 @@ With 826 total observations and 59 combined variables, we hope to account for th
   - Data pre-processing and tidying (including test/train split)
   - Reasoning of research question
   - Visualizations
-      * Scatterplot
+      * 
       * 
   - Modeling:
       * Random Forest
@@ -383,7 +383,7 @@ world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 
 ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   geom_polygon(color="gray") +
-  scale_fill_gradient(low = "lightgray", high = "red") +
+  scale_fill_gradient2(low = "lightgray", mid="yellow", high = "red", midpoint = 10, limits = c(0,20)) +
   coord_fixed() + 
   ggtitle("Map of CO2 Emission Recorded in Dataset") +
   labs(fill='Log of Metric \nTons of CO2 \nEmission')
@@ -414,7 +414,7 @@ ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
        color = "Country") 
 ```
 
-In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this facet scatter plot, there is a lack of data for 2017 and 2018.
+In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this faceted scatter plot, there is a lack of data for 2017 and 2018. USA, China, and India consistently is in the top producers of carbon dioxide correlating with higher count of disasters by year.
 
 ```{r Scatterplot}
 # optimize data for scatterplot
@@ -442,8 +442,11 @@ with Greater than 10 Diasters")
 ```
 
 
+The four types of enterprises are exports of domestic controlled enterprises, exports of foreign controlled multinational enterprises, output of domestic controlled enterprises, and output of foreign controlled multinational enterprises.
 
+Exports are shipment of goods or services from one country to another. Output refers to the production of goods or services within a particular industry or sector. Domestic refers to products or services that are produced or provided within a particular country and intended for use or consumption within that country. Foreign refers to products or services that are produced or provided outside of one's own country and intended for use or consumption in other countries. The type of enterprises will be a combination of either export or output and foreign or domestic. For example, exports of domestic controlled enterprises ('Export_Domestics') are goods that are produced by companies that are headquartered outside the country where they are sold.
 
+The stacked bar graph depicts the CO2 emissions produced by the category of enterprises.
 
 ```{r CO2 Emissions by Type of Enterprise}
 df_agg <- df_long %>% 
@@ -464,6 +467,9 @@ ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) +
     y = "Metric Tons of CO2 Emission"
   ) 
 ```
+
+In developed countries, output of domestic controlled enterprises produce the most CO2 emissions by metric tons in comparison to other categories. Therefore, the most CO2 produced are from the goods or services produced by companies that are owned and controlled within the country where they operate. This indicates countries like the USA are producing goods that feeds back into its own economy.
+
 
 # Modeling
 ## Random Forest
