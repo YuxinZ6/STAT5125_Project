@@ -800,6 +800,8 @@ poi_prediction_2
 ```
 
 ##  K-Nearest Neighbor Regression
+K-Nearest Neighbor is a simple yet effective algorithm, but its performance can be impacted by the choice of the hyperparameter k. However, it can be computationally expensive depending on the size of the data. Here we have chosen k to be 5, 10, 20. 
+
 ```{r K-nearest}
 # Set seed
 set.seed(123457)
