@@ -706,6 +706,7 @@ boost_fit <- workflow_Boost_train %>% fit(data = train_sub)
 boost_fit$fit$fit$fit$evaluation_log %>% slice_min(training_rmse)
 ```
 
+We see that the performance of boosting on the train set is roughly the same as Random Forest, however a little lower. This is also true for boosting performance on the test set.
 ```{r XG-Boostnig Prediction} 
 # predict the train set and evaluate
 boost_fit %>% predict(train_sub) %>% 
@@ -1001,7 +1002,8 @@ metrics_knn_held
 
 
 # Model Assessment and Interpretation
-```{r Diagnostic Plots}
+From the diagnostic plot, we can interpret that our model prediction complied well with the observed values. However, the dataset seems to contain quite a few outliers of which may have a significant effect on our model. 
+```{r Diagnostic Plots, fig.cap="Diagnostic plot of the random forest model. We see somewhat of a linear trend in the actual versus predicted plot (top left) with some outliers. This implies that majority of our prediction complied with the observed values except for a few outliers. The fitted versus residuals plot (top right) indicates no specific pattern. However, there does appears to be quite a few outliers. This also occured in the fitted versus standard residuals plot (bottom left). Finally, the qq-plot appears to be heavy-tailed."}
 # Diagnostic Plots
 
 # setting up plot environment
