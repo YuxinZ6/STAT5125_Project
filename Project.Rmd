@@ -485,7 +485,7 @@ In developed countries, output of domestic controlled enterprises produce the mo
 
 
 # Modeling
-The five models we have chosen are
+The five models we have chosen:
       * Random Forest
       * XG-Boosting
       * Poisson Generalized Linear Regression with Lasso
@@ -805,7 +805,7 @@ poi_prediction_2
 ```
 
 ##  K-Nearest Neighbor Regression
-K-Nearest Neighbor is a simple yet effective algorithm, but its performance can be impacted by the choice of the hyperparameter k. However, it can be computationally expensive depending on the size of the data. Here we have chosen k to be 5, 10, 20. 
+K-Nearest Neighbor is a simple yet effective algorithm, but its performance can be impacted by the choice of the hyperparameter k. However, it can be computationally expensive depending on the size of the data. Here we have chosen k to be 5, 10, 20. We expect the more neighbors the better the model. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
 
 ```{r K-nearest}
 # Set seed
@@ -884,7 +884,7 @@ knn_val3 <- knn_workflow_10 %>%
   )
 knn_val3 %>% collect_metrics()
 
-
+#
 metrics_knn <- bind_rows(
   knn_val1 %>% collect_metrics(),
   knn_val2 %>% collect_metrics(),
@@ -893,6 +893,9 @@ metrics_knn <- bind_rows(
 )
 metrics_knn
 ```
+Since MAE and RMSE are measure of deviation of error, we would hope for a low value. The hyperparameters chosen resulted in little difference between metrics. The MAE and RMSE exhibited the almost the same value of 2.6 and 4.3. R squared metric where $k=5$ is 0.37 and $k=10$ it is 0.40. This 3 percent increase continues in contrasting where $k=10$ and $k=20$, with $k=20$ having the best hyper-parameter of 0.43.
+
+
 ```{r Heldout Metrics}
 # k=5 
 knn_parsnip_5t <- nearest_neighbor() %>% 
@@ -973,13 +976,15 @@ metrics_knn_held <- bind_rows(
   knn_val1t %>% collect_metrics(),
   knn_val2t %>% collect_metrics(),
   knn_val3t %>% collect_metrics(),
-  .id = "Out of Sample"
+  .id = "Model"
 )
 ```
 
 ```{r K-Nearest Heldout Metrics}
 metrics_knn_held
 ```
+The models overall performed marginally better on the holdout data compared to the training data based on the MAE and RMSE. The best hyper-parameter in the test data is $k=10$ with MAE equal to 2.0 and RMSE with the value of 3.4. This model accounts for 48% of frequency.
+
 
 # Model Selection
 ```{r Applying Bootstrap to the Best Model}
@@ -1038,7 +1043,7 @@ mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 
 
 # Result Communication
-- reciting what is our best model. 
+The best model out of the five we have chosen is random forest.
 
 
 
