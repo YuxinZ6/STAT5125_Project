@@ -406,7 +406,9 @@ After seeing the countries with prolific production of CO2 emission, we have sus
 
 The top 3 countries with the most disasters are USA, China, and India.
 
-```{r Disaster By Year for Each Country}
+```{r Disaster By Year for Each Country, fig.cap={"Count of disaster by year for countries with most diasters. This plot includes the $10$ countries with most diaster count for every year. As can be seen that some country, such as China, India, and USA are consistently ranked as the top $10$ for every year. These three countries have one characteristic in common, that their land area are large in comparison with other countries."}}
+# prepare data for the line graph.
+# obtain 10 countries with the most diaster count for every year. 
 df_aggregate_1 <- df_long %>% 
   group_by(Year, ISO3) %>% 
   reframe(total_disaster = first(Disaster_Frequency)) %>%
@@ -420,7 +422,7 @@ df_aggregate_1$Year <- as.numeric(as.character(df_aggregate_1$Year))
 ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
   geom_line() +
   geom_point() +
-  labs(title = "Count of Disaster by Year for Top Countries with Most Diasters",
+  labs(title = "Count of Disaster by Year for Top 10 Countries with Most Diasters",
        x = "Year", 
        y = "Sum of Disaster",
        color = "Country") 
@@ -428,12 +430,11 @@ ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
 
 In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this faceted scatter plot, there is a lack of data for 2017 and 2018. USA, China, and India consistently is in the top producers of carbon dioxide correlating with higher count of disasters by year.
 
-```{r Scatterplot}
-# optimize data for scatterplot
+```{r Scatterplot, fig.cap={"Emission versus diaster count for each country. In this plot, country with more than $10$ diasters per year are highlighted. There appears to be a linear relationship between the log of emission and disaster count. Countries such as China and USA consistently have greater than $10$ diasters for every year."}}
+# optimize data for scatter plot
 scatterplot_df <- df_long %>% group_by(ISO3, Year) %>%
   reframe(emission = sum(`Value`),
-          Disaster_Frequency = first(Disaster_Frequency)) %>%
-  glimpse()
+          Disaster_Frequency = first(Disaster_Frequency))
 
 # convert country (IOS3) as factor
 scatterplot_df$ISO3 <- as.factor(scatterplot_df$ISO3)
@@ -449,8 +450,7 @@ scatterplot_df %>% ggplot(aes(x = log(emission + 0.0001),
   facet_wrap(~Year) +
   ylab("Disaster Count") + 
   xlab("Log of Emission (Log of Metric Tons of CO2)") +
-  ggtitle("Emission versus Disaster Count for Each Country and Country
-with Greater than 10 Diasters")
+  ggtitle("Emission versus Disaster Count for Each Country")
 ```
 
 
@@ -460,7 +460,8 @@ Exports are shipment of goods or services from one country to another. Output re
 
 The stacked bar graph depicts the CO2 emissions produced by the category of enterprises.
 
-```{r CO2 Emissions by Type of Enterprise}
+```{r CO2 Emissions by Type of Enterprise, fig.cap={"CO$2$ emissions by category of enterprise for each country. USA seems to come in the first place in terms of CO$2$ emission, followed by India and China. The emissions of China and India are relatively the same. As a general trend, Output Domestic seems to be the major contributor of CO$2$ emission."}}
+# prep the dataframe for bar plot.
 df_agg <- df_long %>% 
   group_by(ISO3, Category) %>%
   reframe(emission = sum(`Value`)) %>%
@@ -469,7 +470,7 @@ df_agg <- df_long %>%
   arrange(desc(emission)) %>%
   slice(1:10)
 
-# CO2 by Country
+# CO2 by top 10 country and fill by category.
 ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) + 
   geom_bar(stat = "identity")  +
   # facet_wrap(~Category)+
@@ -492,8 +493,8 @@ The five models we have chosen are
       * K-Nearest Neighbor Regression
 
 ## Random Forest
-
-```{r Random Forest}
+In modeling Random Forest, we will attempt with tuning the hyper-parameters including number of predictors at each split (mtry), number of trees for each ensemble (trees), and minimum number of data points at each split (min_n). The tuning is performed on three levels for each of the hyper-parameters, in total of $3^3 = 27$ possible combinations. A $10$-fold cross validation is performed to avoid sampling bias. Hence, in total $270$ models will be evaluated to obtain the best model. Further, to improve the modeling, categorical variables will be encoded into dummy variables and all numerical predictors will be normalized. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+```{r Random Forest: Define Workflow}
 # set the seed
 set.seed(123457)
 # define parsnip, set random forest with mtry, trees, and min_n hyperparameters
@@ -526,6 +527,7 @@ rf_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
 RF_metrics <- metric_set(yardstick::rmse, mae, rsq)
 ```
 
+The following performs parallel processing for the hyper-parameter tuning and cross validation. 
 ```{r Random Forest Continued, eval = FALSE}
 # assigning resources
 cl <- makePSOCKcluster(6)
@@ -548,6 +550,7 @@ stopCluster(cl)
 save(rf_tuning, file = "RandomForest_Prediction.rds")
 ```
 
+The following retrieves run result of parallel processing. Both the mean absolute error and root mean squared error suggests that hyper-parameter combination of mtry $= 30$, trees $=100$, and min_n $=10$ yields the best model. The residual squared supports that hyper-parameter combination of mtry $= 50$, trees $=100$, and min_n $=50$ will yield the best model. Hence, we proceed with the former hyper-parameter combination
 ```{r Random Forest Result}
 RF_prediction <- load("RandomForest_Prediction.rds")
 
@@ -559,12 +562,13 @@ Best_result1 <- rf_tuning %>%
 Best_result1
 ```
 
+By fitting the model with hyper-parameter combination suggested above, the model explains roughly $70%$ of the variation in the model. 
 ```{r Random Forest Model Fitting}
 # Fitting the train data with best hyperparameter combination
 # Since both rmse and rsq_trad supports mtry = 50, trees = 1000, 
 # and min_n = 10, we fit that to the train set. 
-parsnip_RF_train <- rand_forest(mtry = 50,
-                                trees = 1000,
+parsnip_RF_train <- rand_forest(mtry = 30,
+                                trees = 100,
                                 min_n = 10) %>%
   set_engine('randomForest') %>%
   set_mode('regression')
@@ -579,6 +583,7 @@ RF_fit <- workflow_RF_train %>% fit(data = train_sub)
 RF_fit 
 ```
 
+By performing prediction on both the train set and test set, we conclude that the performance of our model is fair. The prediction on the train set scored an rsq of $0.837$ with rmse of $2.183$ and mae of $1.059$. The performance on the test set is lower in comparison to train set, roughly $0.765$(rsq). The mae and rmse of the prediction on test set is only a fraction bigger than the prediction on train set. 
 ```{r Random Forest Model Prediction}
 # prediction on the train set
 RF_train_predict <- RF_fit %>% predict(train_sub)
