@@ -493,7 +493,7 @@ The five models we have chosen are
       * K-Nearest Neighbor Regression
 
 ## Random Forest
-In modeling Random Forest, we will attempt with tuning the hyper-parameters including number of predictors at each split (mtry), number of trees for each ensemble (trees), and minimum number of data points at each split (min_n). The tuning is performed on three levels for each of the hyper-parameters, in total of $3^3 = 27$ possible combinations. A $10$-fold cross validation is performed to avoid sampling bias. Hence, in total $270$ models will be evaluated to obtain the best model. Further, to improve the modeling, categorical variables will be encoded into dummy variables and all numerical predictors will be normalized. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+In modeling Random Forest, we will attempt with tuning the hyper-parameters including number of predictors at each split (mtry), number of trees for each ensemble (trees), and minimum number of data points at each split (min_n). The tuning is performed on three levels for each of the hyper-parameters, in total of $3^3 = 27$ possible combinations. A $10$-fold cross validation is performed twice to avoid sampling bias. Hence, in total $540$ models will be evaluated to obtain the best model. Further, to improve the modeling, categorical variables will be encoded into dummy variables and all numerical predictors will be normalized. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
 ```{r Random Forest: Define Workflow}
 # set the seed
 set.seed(123457)
@@ -550,19 +550,24 @@ stopCluster(cl)
 save(rf_tuning, file = "RandomForest_Prediction.rds")
 ```
 
-The following retrieves run result of parallel processing. Both the mean absolute error and root mean squared error suggests that hyper-parameter combination of mtry $= 30$, trees $=100$, and min_n $=10$ yields the best model. The residual squared supports that hyper-parameter combination of mtry $= 50$, trees $=100$, and min_n $=50$ will yield the best model. Hence, we proceed with the former hyper-parameter combination
+The following retrieves run result of parallel processing. Both the mean absolute error and root mean squared error suggests that hyper-parameter combination of mtry $= 30$, trees $=100$, and min_n $=10$ yields the best model. The residual squared supports that hyper-parameter combination of mtry $= 10$, trees $=500$, and min_n $=10$ will yield the best model. Hence, we proceed with the former hyper-parameter combination
 ```{r Random Forest Result}
 RF_prediction <- load("RandomForest_Prediction.rds")
 
 # selecting the best hyperparameter combination
 Best_result1 <- rf_tuning %>% 
+  filter(!(.metric == "rsq")) %>%
   group_by(.metric) %>% 
   slice_min(mean)
-
-Best_result1
+Best_result2 <- rf_tuning %>% 
+  filter(.metric == "rsq") %>%
+  group_by(.metric) %>% 
+  slice_max(mean)
+Best_result3 <- Best_result1 %>% bind_rows(Best_result2)
+Best_result3
 ```
 
-By fitting the model with hyper-parameter combination suggested above, the model explains roughly $70%$ of the variation in the model. 
+By fitting the model with hyper-parameter combination suggested above, the model explains roughly $70%$ of the variation in the model. The mean of squared residuals (or mse) is $8.411$. This implies that the fitted values are on average $8.411$ away from the observed values. 
 ```{r Random Forest Model Fitting}
 # Fitting the train data with best hyperparameter combination
 # Since both rmse and rsq_trad supports mtry = 50, trees = 1000, 
@@ -580,10 +585,16 @@ workflow_RF_train <- workflow() %>%
 
 # fit to the train data
 RF_fit <- workflow_RF_train %>% fit(data = train_sub) 
-RF_fit 
+# display result
+RF_rsq <- RF_fit$fit$fit$fit$rsq %>% mean()
+RF_mae <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2)
+RF_rmse <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2) %>%
+  sqrt()
+cat("Metrics of Random Forest: rsq =", RF_rsq, ", mae =", RF_mae, 
+    ", and rmse=", RF_rmse, ".")
 ```
 
-By performing prediction on both the train set and test set, we conclude that the performance of our model is fair. The prediction on the train set scored an rsq of $0.837$ with rmse of $2.183$ and mae of $1.059$. The performance on the test set is lower in comparison to train set, roughly $0.765$(rsq). The mae and rmse of the prediction on test set is only a fraction bigger than the prediction on train set. 
+By performing prediction on both the train set and test set, we conclude that the performance of our model is fair. The prediction on the train set scored an rsq of $0.837$ with rmse of $2.183$ and mae of $1.059$. The performance on the test set is lower in comparison to train set, roughly $0.765$(rsq). The mae and rmse of the prediction on test set is only a fraction bigger than the prediction on train set. The model performance on the test set is lower than on the train set. 
 ```{r Random Forest Model Prediction}
 # prediction on the train set
 RF_train_predict <- RF_fit %>% predict(train_sub)
@@ -600,7 +611,8 @@ RF_test_predict_metric <- RF_test_predict %>%
 RF_test_predict_metric
 ```
 
-## XG-Boosting
+## XG-Boost
+In modeling using Boosting, we will attempt to tune the hyper-parameters to improve model performance. The hyper parameter as depth of each trees (tree_depth), learning rate of XG-Boost (learn_rate), and minimum number of data points at each split (min_n). Three levels of each hyper-parameters are tried, giving $3^3= 27$ possible combinations. A $10$-fold cross validation is performed twice to avoid sampling bias. In total $540$ model are being evaluated. Further more, to improve model performance, all nominal predictors are coded as dummy variables and all numerical predictors are normalized. 
 ```{r XG-Boosting}
 # set the seed
 set.seed(123457)
@@ -635,6 +647,7 @@ boost_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
 boost_metrics <- metric_set(rmse, mae, rsq)
 ```
 
+The following utilizes parallel processin to evaluate the models
 ```{r XG-Boosting Continued, eval=FALSE}
 # assigning resources
 cl <- makePSOCKcluster(6)
@@ -657,14 +670,23 @@ stopCluster(cl)
 save(boost_tuning, file = "XGBoost_Prediction.rds")
 ```
 
+After retrieving the run result from parallel processing, all three metrics rsq, mae and rmse supports hyper-parameter combination of min_n $= 10$, tree_depth $=15$, and learn_rate $=0.1$ yields the best model. 
 ```{r XG-Boost Result}
 Boost_prediction <- load("XGBoost_Prediction.rds")
 
-Best_result3 <- boost_tuning %>% 
+Best_result4 <- boost_tuning %>% 
+  filter(!(.metric == "rsq")) %>%
   group_by(.metric) %>% 
   slice_min(mean)
-Best_result3
+Best_result5 <- boost_tuning %>% 
+  filter(.metric == "rsq") %>%
+  group_by(.metric) %>% 
+  slice_max(mean)
+Best_result6 <- Best_result4 %>% bind_rows(Best_result5)
+Best_result6
+```
 
+```{r XG-Boost Model Fitting}
 # Fitting the train data with best hyperparameter combination
 # all metrics support the combination of min_n = 10, 
 # tree_depth = 10, and learn_rate = 0.1, we use it as our model for train set. 
@@ -681,26 +703,14 @@ workflow_Boost_train <- workflow() %>%
 
 # fit to the train data
 boost_fit <- workflow_Boost_train %>% fit(data = train_sub) 
-boost_fit 
+boost_fit$fit$fit$fit$evaluation_log %>% slice_min(training_rmse)
 ```
 
 ```{r XG-Boostnig Prediction} 
-# Fitting the train data with best hyperparameter combination
-# all metrics support the combination of min_n = 10, 
-# tree_depth = 10, and learn_rate = 0.1, we use it as our model for train set. 
-parsnip_Boost_train <- boost_tree(tree_depth = 10, 
-                                  learn_rate = 0.1, 
-                                  min_n = 10) %>%
-  set_engine('xgboost') %>%
-  set_mode('regression')
-
-# define workflow
-workflow_Boost_train <- workflow() %>% 
-  add_model(parsnip_Boost_train) %>%
-  add_recipe(boost_recipe)
-
-# fit to the train data
-boost_fit <- workflow_Boost_train %>% fit(data = train_sub) 
+# predict the train set and evaluate
+boost_fit %>% predict(train_sub) %>% 
+  mutate(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  boost_metrics(truth = truth, estimate = .pred)
 
 # predict the test set and evaluate
 boost_fit %>% predict(test_sub) %>% 
