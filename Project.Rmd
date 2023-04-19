@@ -329,7 +329,7 @@ graphics:
   - because count of disaster goes by year, then we will need to aggregate the co2 emission by country and by year. so we sum all of the sectors and types of co2 emissions. 
 
 # Visualizations
-Climate change is a global issue as it leads to higher natural disasters. The line graph depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
+Climate change is a global issue leading to higher natural disasters frequency. The line graph below depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
 
 ```{r Disaster By Year, fig.cap={"Diaster by year. Count of total disaster decreased from years $2005$ to $2008$. This is a decreasing trend because of we are focusing on a relatively short time span. If one were to look at the count of diaster at a bigger time frame, one should see a general upward trend."}}
 # prep dataframe for plot 
@@ -647,7 +647,7 @@ boost_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
 boost_metrics <- metric_set(rmse, mae, rsq)
 ```
 
-The following utilizes parallel processin to evaluate the models
+The following utilizes parallel processing to evaluate the models.
 ```{r XG-Boosting Continued, eval=FALSE}
 # assigning resources
 cl <- makePSOCKcluster(6)
@@ -671,6 +671,7 @@ save(boost_tuning, file = "XGBoost_Prediction.rds")
 ```
 
 After retrieving the run result from parallel processing, all three metrics rsq, mae and rmse supports hyper-parameter combination of min_n $= 10$, tree_depth $=15$, and learn_rate $=0.1$ yields the best model. 
+
 ```{r XG-Boost Result}
 Boost_prediction <- load("XGBoost_Prediction.rds")
 
@@ -720,6 +721,10 @@ boost_fit %>% predict(test_sub) %>%
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
+Poisson generalized linear regression model is commonly used for count data analysis, where the outcome variable on interest is disaster frequency with the 58 combination of sectors and category of enterprises are the predictors.
+
+The Lasso penalty will help regularize and shrink the coefficients of the predictor variables towards zero, effectively eliminating some of the less important predictors from the model.
+
 ```{r Poisson Lasso: define workflow}
 set.seed(123457)
 # subsetting train dataset. excluding ISO3 and Year
@@ -746,6 +751,7 @@ poi_result <- poi_workflow %>%
     metrics = metric_set(rmse, rsq, mae)
     )
 ```
+
 
 ```{r Poisson Lasso Results}
 # showing results 
@@ -803,7 +809,6 @@ poi_prediction_1 <- poi_fitted %>% predict(test_sub) %>%
                     mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
                     goal_metrics(truth = truth, estimate = .pred)
 poi_prediction_1
-
 
 
 # poisson with elastic net, preediction on test set
@@ -997,15 +1002,6 @@ metrics_knn_held
 The models overall performed marginally better on the holdout data compared to the training data based on the MAE and RMSE. The best hyper-parameter in the test data is $k=10$ with MAE equal to 2.0 and RMSE with the value of 3.4. This model accounts for 48% of frequency.
 
 
-# Model Selection
-```{r Applying Bootstrap to the Best Model}
-# set.seed(123457)
-# train_bootstrap <- train_sub %>% bootstraps(times = 25)
-# workflow_RF_boostrap <- workflow_RF %>% 
-#   fit_resamples(train_bootstrap, metrics = RF_metrics)
-```
-
-
 # Model Assessment and Interpretation
 From the diagnostic plot, we can interpret that our model prediction complied well with the observed values. However, the dataset seems to contain quite a few outliers of which may have a significant effect on our model. 
 ```{r Diagnostic Plots, fig.cap="Diagnostic plot of the random forest model. We see somewhat of a linear trend in the actual versus predicted plot (top left) with some outliers. This implies that majority of our prediction complied with the observed values except for a few outliers. The fitted versus residuals plot (top right) indicates no specific pattern. However, there does appears to be quite a few outliers. This also occured in the fitted versus standard residuals plot (bottom left). Finally, the qq-plot appears to be heavy-tailed."}
@@ -1051,7 +1047,53 @@ mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
 
 
+# Model Selection
+Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+
+
 # Uncertainty Quantification
+Validation of held-out data has been performed above for each model. Below gathers all the held-out metrics from above into one table. For now XG-boost is not included.
+```{r Cross Model Comparison}
+#XG Boost
+# predict the test set and evaluate
+boost_fit %>% predict(test_sub) %>% 
+  mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  boost_metrics(truth = truth, estimate = .pred)
+
+knn<-metrics_knn_held %>%  select(.metric, .estimator, mean) %>% rename(.estimate=mean) 
+knn_val_5 <-knn %>% slice(c(1:3))
+knn_val_10 <-knn %>% slice(c(4:6))
+knn_val_20 <-knn %>% slice(c(7:9))
+
+val<- bind_rows(
+  RF_train_predict_metric,
+  poi_prediction_1,
+  poi_prediction_2,
+  knn_val_5,
+  knn_val_10,
+  knn_val_20,
+  .id = "Model") %>% 
+  mutate(Model = recode(Model, 
+                             "1" = "Random Forest",
+                             "2" = "Poisson Lasso",
+                             "3" = "Poisson Elastic Net",
+                             "4"= "K-Nearest (k=5)",
+                             "5"= "K-Nearest (k=10)",
+                             "6"= "K-Nearest (k=20)")) %>% 
+  pivot_wider(names_from = c(".metric"), 
+                              values_from = .estimate)
+val
+
+```
+
+
+```{r Applying Bootstrap to the Best Model}
+# set.seed(123457)
+# train_bootstrap <- train_sub %>% bootstraps(times = 25)
+# workflow_RF_boostrap <- workflow_RF %>% 
+#   fit_resamples(train_bootstrap, metrics = RF_metrics)
+```
+
 
 
 # Result Communication
