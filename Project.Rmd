@@ -75,6 +75,8 @@ unregister_dopar()
 ```
 
 ## Read in Data and Cleaning
+In this project, we utilized two datasets, 11_Direct_Investment_related_indicators.csv and 24_Climate_related_Diasters_Frequency.csv. The former dataset contains CO2 emission for each country from years 2005 to 2018, for each country, sectors, and relative to either export or domestic of either domestically or foreign controlled enterprises. The later dataset contains disaster count from years 1980 to 2019 for each country and by different types of diaster. 
+
 ### Cleaning Dataset 11_Direct_Investment-related_Indicators
 In order to organize the raw data, four different dictionaries were created and selected our variables of interest (Country, Year 2005 to 2018, Sector and Enterprise type).
 
@@ -1072,6 +1074,40 @@ qqPlot(stand_resid, main = "QQ-norm Plot",
 mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
 
+```{r PCA, fig.cap={"Percentage of Vairnaces Explained by Each Principle Components. The first couple principle components seems to add up to the majority of the percentage of variances."}}
+train_PCA <- train_sub %>% 
+  mutate_if(~ any(!is.na(as.numeric(.))), ~as.numeric(.)) %>%
+  prcomp(scale = TRUE)
+train_loadings <- broom::tidy(train_PCA, matrix = "loadings")
+train_scores <- broom::tidy(train_PCA, matrix = "scores")
+train_variances <- broom::tidy(train_PCA, matrix = "pcs")
+
+train_variances %>% ggplot(aes(x = PC, y = percent)) + 
+  geom_segment(aes(xend = PC), yend = 0, linewidth = 5) + 
+  ylab("Percentage of Variance Explained") + 
+  ggtitle("Percentage of Variances Explained by Each Principle Components")
+
+cat("Percentage of variances explained by the first four principle components is",
+    (train_variances$percent[1:4] %>% sum())*100, "%")
+```
+
+```{r PCA Factoring plot for first and second components, fig.cap={"Factor loadings for the first two principle components. We see that for the first component, all factors have negative effects while only year has positive effect. And in the second component does not seems to be interpretable"}}
+train_loadings %>% 
+  filter(PC <=2) %>%
+  ggplot(aes(y = column, x = value)) +
+  geom_segment(aes(yend = column), xend = 0, linewidth = 4) + 
+  facet_wrap(~PC) + 
+  theme(axis.text.y=element_text(size=rel(0.75)))
+```
+
+```{r PCA Factoring plot for third and fourth components, fig.cap = {"Factor loadings for the third and fourth principle components. Both factoring plot does not seem to be interpretable."}}
+train_loadings %>% 
+  filter(PC > 2 & PC <= 4) %>%
+  ggplot(aes(y = column, x = value)) +
+  geom_segment(aes(yend = column), xend = 0, linewidth = 4) + 
+  facet_wrap(~PC) + 
+  theme(axis.text.y=element_text(size=rel(0.75)))
+```
 
 # Model Selection
 Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
