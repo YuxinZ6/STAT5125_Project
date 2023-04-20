@@ -983,7 +983,7 @@ knn_workflow_10t <- workflow() %>%
 knn_10t <- knn_workflow_10t %>% fit(test_sub)
 
 
-# k=20 with standardization
+# k=20 
 knn_parsnip_20t <- nearest_neighbor() %>% 
   set_mode("regression") %>%
   set_engine("kknn", neighbors = 20)
@@ -1175,10 +1175,10 @@ word_cloud_df %>% ggplot() +
 ```
 
 ## Functions
-function defined in Random Forest model fitting chunk. 
+Function defined in Random Forest model fitting chunk. 
 
 # Model Selection
-Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. Symmetric Mean Absolute Percentage Error (sMAPE) to measure the relative accuracy of a forecast.
 ```{r MAPE}
 
 ####Note: conflicts with knn code above, subject to edits.
@@ -1288,27 +1288,22 @@ val
 ```
 From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of 0.84 and 0.75. 
 
-```{r Applying Bootstrap to the Best Model}
-# set.seed(123457)
-# train_bootstrap <- train_sub %>% bootstraps(times = 25)
-# workflow_RF_boostrap <- workflow_RF %>% 
-#   fit_resamples(train_bootstrap, metrics = RF_metrics)
-```
-
-
 
 # Result Communication
-One of the main human impact worsening climate change is our carbon foot print. With developing countries producing the most carbon dioxide from output of domestic controlled enterprises, this is correlated with the higher disaster frequency in these countries.
+One of the main human impact worsening climate change is our carbon foot print. With developing countries producing the most carbon dioxide from output of domestic controlled enterprises, this is correlated with the higher disaster frequency in these countries. 
 
+{add which variable contributed the most --- extract from random forest, if we can maybe visualize the tree?}
 
+The best model out of the five we have chosen is random forest. The model explains roughly 70 of the variation in the model. The mean of squared residuals (or mse) is 8.411. This implies that the fitted values are on average 8.411 away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at 2.17 and the mae at 1.05. From the rsq value of 0.84, we can conclude that the model explains approximately 84% of the variability in the disaster frequency.
 
-The best model out of the five we have chosen is random forest.
+A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all 5 models. This means none of our model consists of the variable country. 
 
-- circle back to purpose
-- best model and why
-- problems - countries and effect
-- what could have been better
-- future suggestions
+With that said a suggestion for the future would be to include countries for a more comprehensive analysis. As the hyperparameter was tuned for random forest, the same can be done for k-nearest neighbor.
+
+ --- 
+"Can we conclude that:" Disaster frequency is highly correlated to CO2 emissions.
+    Questions to answer of we can: Which sector and enterprise produced the most CO2?
+ ---
 
 # Citation
 International Monetary Fund. 2022.Climate Change Indicators Dashboard. Climate Change Data and , https://climatedata.imf.org/pages/access-data. Accessed on [2023-03-15].
