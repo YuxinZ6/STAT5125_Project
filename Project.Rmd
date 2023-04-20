@@ -32,8 +32,11 @@ With 826 total observations and 59 combined variables, we hope to account for th
   - Data pre-processing and tidying (including test/train split)
   - Reasoning of research question
   - Visualizations
-      * 
-      * 
+      * Disaster by Year
+      * World Map of CO2 Emissions
+      * Disaster by Year for Each Country
+      * Emission versus Disaster Count for Each Country
+      * CO2 Emissions by Type of Enterprise
   - Modeling:
       * Random Forest
       * XG-Boosting
@@ -717,9 +720,10 @@ boost_fit %>% predict(train_sub) %>%
   boost_metrics(truth = truth, estimate = .pred)
 
 # predict the test set and evaluate
-boost_fit %>% predict(test_sub) %>% 
+boost_val <- boost_fit %>% predict(test_sub) %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
+boost_val
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -1119,14 +1123,9 @@ Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squ
 
 
 # Uncertainty Quantification
-Validation of held-out data has been performed above for each model. Below gathers all the held-out metrics from above into one table. For now XG-boost is not included.
+Validation of held-out data has been performed above for each model. Below gathers all the held-out metrics from above into one table. 
 ```{r Cross Model Comparison}
-#XG Boost
-# predict the test set and evaluate
-boost_fit %>% predict(test_sub) %>% 
-  mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  boost_metrics(truth = truth, estimate = .pred)
-
+# Reformatting knn metric table to combine
 knn<-metrics_knn_held %>%  select(.metric, .estimator, mean) %>% rename(.estimate=mean) 
 knn_val_5 <-knn %>% slice(c(1:3))
 knn_val_10 <-knn %>% slice(c(4:6))
@@ -1134,6 +1133,7 @@ knn_val_20 <-knn %>% slice(c(7:9))
 
 val<- bind_rows(
   RF_train_predict_metric,
+  boost_val,
   poi_prediction_1,
   poi_prediction_2,
   knn_val_5,
@@ -1142,17 +1142,18 @@ val<- bind_rows(
   .id = "Model") %>% 
   mutate(Model = recode(Model, 
                              "1" = "Random Forest",
-                             "2" = "Poisson Lasso",
-                             "3" = "Poisson Elastic Net",
-                             "4"= "K-Nearest (k=5)",
-                             "5"= "K-Nearest (k=10)",
-                             "6"= "K-Nearest (k=20)")) %>% 
+                             "2" = "XG Boost",
+                             "3" = "Poisson Lasso",
+                             "4" = "Poisson Elastic Net",
+                             "5"= "K-Nearest (k=5)",
+                             "6"= "K-Nearest (k=10)",
+                             "7"= "K-Nearest (k=20)")) %>% 
   pivot_wider(names_from = c(".metric"), 
                               values_from = .estimate)
 val
 
 ```
-
+From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of 0.84 and 0.75. 
 
 ```{r Applying Bootstrap to the Best Model}
 # set.seed(123457)
