@@ -1078,6 +1078,8 @@ qqPlot(stand_resid, main = "QQ-norm Plot",
 mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
 
+# Add-Ons
+## Principle Component Analysis
 From a quick investigation in the variables using Principle Component Analysis, we see that the first four principle components explained roughly $74.789\%$ of the variances in the dataset. A closer look at the first four principle components then revealed that only the first principle component is interpretable. In the first principle component, all factors have negative effects while only the year factor has positive effect.
 ```{r PCA, fig.cap={"Percentage of Vairnaces Explained by Each Principle Components. The first couple principle components seems to add up to the majority of the percentage of variances."}}
 # mutate all predictors to numeric (only year as factor and non numeric,
@@ -1117,6 +1119,11 @@ train_loadings %>%
   geom_segment(aes(yend = column), xend = 0, linewidth = 4) + 
   facet_wrap(~PC) + 
   theme(axis.text.y=element_text(size=rel(0.75)))
+```
+
+## Word Cloud
+```{r}
+
 ```
 
 # Model Selection
