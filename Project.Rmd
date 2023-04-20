@@ -1075,6 +1075,9 @@ mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
 
 ```{r PCA, fig.cap={"Percentage of Vairnaces Explained by Each Principle Components. The first couple principle components seems to add up to the majority of the percentage of variances."}}
+# mutate all predictors to numeric (only year as factor and non numeric,
+# all predictor numeric at this point)
+# perform PCA with scaling
 train_PCA <- train_sub %>% 
   mutate_if(~ any(!is.na(as.numeric(.))), ~as.numeric(.)) %>%
   prcomp(scale = TRUE)
@@ -1092,6 +1095,7 @@ cat("Percentage of variances explained by the first four principle components is
 ```
 
 ```{r PCA Factoring plot for first and second components, fig.cap={"Factor loadings for the first two principle components. We see that for the first component, all factors have negative effects while only year has positive effect. And in the second component does not seems to be interpretable"}}
+# looking at the first two principle components
 train_loadings %>% 
   filter(PC <=2) %>%
   ggplot(aes(y = column, x = value)) +
@@ -1101,6 +1105,7 @@ train_loadings %>%
 ```
 
 ```{r PCA Factoring plot for third and fourth components, fig.cap = {"Factor loadings for the third and fourth principle components. Both factoring plot does not seem to be interpretable."}}
+# looking at the third and fourth principle components
 train_loadings %>% 
   filter(PC > 2 & PC <= 4) %>%
   ggplot(aes(y = column, x = value)) +
