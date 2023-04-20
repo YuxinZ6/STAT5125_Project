@@ -752,6 +752,7 @@ poi_result <- poi_workflow %>%
     )
 ```
 
+Metrics for the training data below shows unfavorable results with MAE and RMSE values in the seven or eight figures. The RSq value indicating only a 21.7% of accountability for this model.
 
 ```{r Poisson Lasso Results}
 # showing results 
@@ -763,6 +764,9 @@ poi_fitted
 
 
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
+
+Poisson with elastic net allows 2 penalties that can be used to select the most important predictors and avoid overfitting, even in the presence of multicollinearity or high-dimensional data. 
+
 ```{r Poisson Elastic Net: define workflow}
 #  Poisson Generalized Linear Model with Elastic Net Penalty
 set.seed(123457)
@@ -779,7 +783,6 @@ poi_workflow_enp <- workflow() %>%
   add_model(poi_parsnip_enp) %>%
   add_recipe(poi_recipe_enp)
 ```
-
 ```{r Poisson Elastic Net: fitting}
 # cross validation on train dataset
 poi_result_enp <- poi_workflow_enp %>%
@@ -788,6 +791,8 @@ poi_result_enp <- poi_workflow_enp %>%
     metrics = metric_set(rmse, rsq, mae),
     )
 ```
+
+Metrics for the Poisson with elastic net below shows unfavorable results with MAE and RMSE values in the five or six figures. The RSq value indicating only a 26.8% of accountability for this model. Although this is slightly better than the Poisson with lasso, it is still extremely unfavorable compared to XG-Boost and Random Forest models.
 
 ```{r Poisson Elastic Net Results}
 # showing results
@@ -811,17 +816,30 @@ poi_prediction_1 <- poi_fitted %>% predict(test_sub) %>%
 poi_prediction_1
 
 
-# poisson with elastic net, preediction on test set
+# poisson with elastic net, prediction on test set
 goal_metrics <- metric_set(rmse, rsq, mae)
 # predict on test test
 poi_prediction_2 <- poi_fitted_enp %>% predict(test_sub) %>%
                     mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
                     goal_metrics(truth = truth, estimate = .pred)
 poi_prediction_2
+
+poison_val<- bind_rows(poi_prediction_1,poi_prediction_2, .id="Model") %>% 
+  mutate(Model = recode(Model, 
+                             "1" = "Poisson Lasso",
+                             "2" = "Poisson Elastic Net",
+                             )) %>% 
+  pivot_wider(names_from = c(".metric"), 
+                              values_from = .estimate)
+poison_val
 ```
+The metrics table above for Poisson regression of held-out data is very poor. Regardless of the penalty (lasso or elastic net) the metric values are the same for all. 
+
+At this point, Random Forest is in the lead for the best model to predict disaster frequency. Perhaps, K-nearest neighbor can have more promising results.
+
 
 ##  K-Nearest Neighbor Regression
-K-Nearest Neighbor is a simple yet effective algorithm, but its performance can be impacted by the choice of the hyperparameter k. However, it can be computationally expensive depending on the size of the data. Here we have chosen k to be 5, 10, 20. We expect the more neighbors the better the model. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+K-Nearest Neighbor is a simple yet effective algorithm, but its performance can be impacted by the choice of the hyper parameter k. However, it can be computationally expensive depending on the size of the data. Here we have chosen k to be 5, 10, 20. We expect the more neighbors the better the model. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
 
 ```{r K-nearest}
 # Set seed
@@ -993,13 +1011,21 @@ metrics_knn_held <- bind_rows(
   knn_val2t %>% collect_metrics(),
   knn_val3t %>% collect_metrics(),
   .id = "Model"
-)
+) %>% 
+  mutate(Model = recode(Model, 
+                             "1" = "k = 5",
+                             "2" = "k = 10",
+                             "3" = "k = 20"
+                             )) %>% 
+  select(c(Model,.metric, .estimator, mean)) %>% 
+  pivot_wider(names_from = c(.metric), 
+                              values_from = mean)
 ```
 
 ```{r K-Nearest Heldout Metrics}
 metrics_knn_held
 ```
-The models overall performed marginally better on the holdout data compared to the training data based on the MAE and RMSE. The best hyper-parameter in the test data is $k=10$ with MAE equal to 2.0 and RMSE with the value of 3.4. This model accounts for 48% of frequency.
+The models overall performed marginally better on the held-out data compared to the training data based on the MAE and RMSE. The best hyper-parameter in the test data is $k=10$ with MAE equal to 2.0 and RMSE with the value of 3.4. This model accounts for 48% of frequency.
 
 
 # Model Assessment and Interpretation
