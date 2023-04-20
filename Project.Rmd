@@ -1187,9 +1187,17 @@ From the metrics of held out data, it is clear random forest and XG boost outper
 
 
 # Result Communication
+One of the main human impact worsening climate change is our carbon foot print. With developing countries producing the most carbon dioxide from output of domestic controlled enterprises, this is correlated with the higher disaster frequency in these countries.
+
+
+
 The best model out of the five we have chosen is random forest.
 
-
+- circle back to purpose
+- best model and why
+- problems - countries and effect
+- what could have been better
+- future suggestions
 
 # Citation
 International Monetary Fund. 2022.Climate Change Indicators Dashboard. Climate Change Data and , https://climatedata.imf.org/pages/access-data. Accessed on [2023-03-15].
