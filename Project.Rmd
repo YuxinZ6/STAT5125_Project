@@ -65,6 +65,7 @@ library(yardstick)
 library(kknn)
 library(poissonreg)
 library(car)
+library(ggwordcloud)
 tidymodels_prefer()
 theme_set(theme_bw())
 
@@ -1125,7 +1126,18 @@ train_loadings %>%
 
 ## Word Cloud
 ```{r}
+# prepping dataframe for the word cloud, dropping years 2017 and 2018 since they
+# do not contain any emission values.
+word_cloud_df <- df_long %>% select(-ISO3, Category, Disaster_Frequency) %>%
+  group_by(Year, Sector_abb) %>%
+  reframe(emission = sum(Value)) %>%
+  filter(!(Year == '2017' | Year == '2018'))
 
+# plot the word cloud, emission as sizing value and facet wrap by year
+word_cloud_df %>% ggplot() + 
+  geom_text_wordcloud(aes(label = Sector_abb, size = emission)) + 
+  scale_size_area(max_size = 2.8) + 
+  facet_wrap(~Year)
 ```
 
 # Model Selection
