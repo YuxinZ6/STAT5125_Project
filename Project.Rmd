@@ -591,11 +591,22 @@ workflow_RF_train <- workflow() %>%
 
 # fit to the train data
 RF_fit <- workflow_RF_train %>% fit(data = train_sub) 
+
+# define function to calculate mae
+calculate_mae <- function(actual, predicted){
+  mae <- mean(abs(actual - predicted))
+}
+
+# define function to calculate rmse
+calculate_rmse <- function(actual, predicted){
+  mse <- mean((actual - predicted)^2)
+  rmse <- sqrt(mse)
+}
+
 # display result
 RF_rsq <- RF_fit$fit$fit$fit$rsq %>% mean()
-RF_mae <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2)
-RF_rmse <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2) %>%
-  sqrt()
+RF_mae <- calculate_mae(train_sub$Disaster_Frequency, RF_fit$fit$fit$fit$predicted)
+RF_rmse <- calculate_rmse(train_sub$Disaster_Frequency, RF_fit$fit$fit$fit$predicted)
 cat("Metrics of Random Forest: rsq =", RF_rsq, ", mae =", RF_mae, 
     ", and rmse=", RF_rmse, ".")
 ```
@@ -716,15 +727,16 @@ boost_fit$fit$fit$fit$evaluation_log %>% slice_min(training_rmse)
 We see that the performance of boosting on the train set is roughly the same as Random Forest, however a little lower. This is also true for boosting performance on the test set.
 ```{r XG-Boostnig Prediction} 
 # predict the train set and evaluate
-boost_fit %>% predict(train_sub) %>% 
+boost_train_predict <- boost_fit %>% predict(train_sub)
+boost_train_predict %>%
   mutate(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
 
 # predict the test set and evaluate
-boost_val <- boost_fit %>% predict(test_sub) %>% 
+boost_test_predict <- boost_fit %>% predict(test_sub) 
+boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
-boost_val
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -865,7 +877,7 @@ knn_workflow_5 <- workflow() %>%
   add_model(knn_parsnip_5) %>%
   add_recipe(knn_recipe_5)
 
-knn_5s <- knn_workflow_5 %>% fit(train_sub)
+knn_5 <- knn_workflow_5 %>% fit(train_sub)
 
 
 # k=10 
@@ -1029,10 +1041,32 @@ metrics_knn_heldt <- metrics_knn_held %>%
   select(c(Model,.metric, .estimator, mean)) %>% 
   pivot_wider(names_from = c(.metric), 
                               values_from = mean)
+# 
+# knn_5t <- knn_5 %>% predict(test_sub)
+# knn_10t <- knn_10 %>% predict(test_sub)
+# knn_20t <- knn_20 %>% predict(test_sub)
+# 
+# 
+# rsq_manual <- function (x, y){
+#   cor(x, y) ^ 2
+# }
+# knn_5t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_5t$.pred)
+# knn10t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_10t$.pred)
+# knn20t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_20t$.pred)
+# knn_5t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_5t$.pred)
+# knn_10t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_10t$.pred)
+# knn_20t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_20t$.pred)
+# knn_5t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_5t$.pred)
+# knn_10t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_10t$.pred)
+# knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
+# data.frame(models = c("knn5", "knn10", "knn20"),
+#            rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq), 
+#            mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
+#            rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse))
 ```
 
 ```{r K-Nearest Heldout Metrics}
-metrics_knn_heldt
+metrics_knn_held
 ```
 The models overall performed marginally better on the held-out data compared to the training data based on the MAE and RMSE. The best hyper-parameter in the test data is $k=10$ with MAE equal to 2.0 and RMSE with the value of 3.4. This model accounts for 48% of frequency.
 
@@ -1140,8 +1174,85 @@ word_cloud_df %>% ggplot() +
   facet_wrap(~Year)
 ```
 
+## Functions
+function defined in Random Forest model fitting chunk. 
+
 # Model Selection
 Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+```{r MAPE}
+
+####Note: conflicts with knn code above, subject to edits.
+
+##########Must run knn_prediction_code.R before running this R script file#########
+# Out of sample metric: sMAPE
+# sMAPE = 1/n * (Σ|( Actual — Predicted)|/(Actual + Predicted/2))
+# sMAPE is useful when actual value contains zero, which in our case that 
+# disaster frequency is often 0.
+# using MAPE with actual value of 0 will result in infinity error because value is
+# not divisible by 0.
+# an alternative to this is sMAPE. 
+# sMAPE lower bound is 0% and upper bound is 200%.
+
+# calculate sMAPE for each models on both the train set and test set
+# random forest
+RF_train_sMAPE <- RF_train_predict %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+RF_test_sMAPE <- RF_test_predict %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+# xg-boost
+boost_train_sMAPE <- boost_train_predict %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+boost_test_sMAPE <- boost_test_predict %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+# poisson 
+poi_train_sMAPE <- poi_fitted %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+poi_test_sMAPE <- poi_fitted %>% predict(test_sub) %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+# knn
+knn5_train_sMAPE <- knn_5 %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn5_test_sMAPE <- knn_5t %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn10_train_sMAPE <- knn_10 %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn10_test_sMAPE <- knn_10t %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn20_train_sMAPE <- knn_20 %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn20_test_sMAPE <- knn_20t %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+
+# bind_rows(RF_train_sMAPE, RF_test_sMAPE, boost_train_sMAPE,
+#           boost_test_sMAPE, poi_train_sMAPE, poi_test_sMAPE,
+#           knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
+#           knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE)
+
+# organize results into one dataframe
+model_selection_result <- 
+  data.frame(prediction = c("RF_train", "RF_test", "Boost_train", "Boost_test", 
+                            "Poisson_train", "Poisson_test", "knn5_train", 
+                            "knn5_test", "knn10_train", "knn10_test",
+                            "knn20_train", "knn20_test"),
+             value = c(RF_train_sMAPE, RF_test_sMAPE, boost_train_sMAPE,
+                       boost_test_sMAPE, poi_train_sMAPE, poi_test_sMAPE,
+                       knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
+                       knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE))
+model_selection_result
+
+```
 
 
 # Uncertainty Quantification
