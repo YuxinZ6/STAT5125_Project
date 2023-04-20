@@ -591,11 +591,22 @@ workflow_RF_train <- workflow() %>%
 
 # fit to the train data
 RF_fit <- workflow_RF_train %>% fit(data = train_sub) 
+
+# define function to calculate mae
+calculate_mae <- function(actual, predicted){
+  mae <- mean(abs(actual - predicted))
+}
+
+# define function to calculate rmse
+calculate_rmse <- function(actual, predicted){
+  mse <- mean((actual - predicted)^2)
+  rmse <- sqrt(mse)
+}
+
 # display result
 RF_rsq <- RF_fit$fit$fit$fit$rsq %>% mean()
-RF_mae <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2)
-RF_rmse <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2) %>%
-  sqrt()
+RF_mae <- calculate_mae(train_sub$Disaster_Frequency, RF_fit$fit$fit$fit$predicted)
+RF_rmse <- calculate_rmse(train_sub$Disaster_Frequency, RF_fit$fit$fit$fit$predicted)
 cat("Metrics of Random Forest: rsq =", RF_rsq, ", mae =", RF_mae, 
     ", and rmse=", RF_rmse, ".")
 ```
@@ -716,15 +727,16 @@ boost_fit$fit$fit$fit$evaluation_log %>% slice_min(training_rmse)
 We see that the performance of boosting on the train set is roughly the same as Random Forest, however a little lower. This is also true for boosting performance on the test set.
 ```{r XG-Boostnig Prediction} 
 # predict the train set and evaluate
-boost_fit %>% predict(train_sub) %>% 
+boost_train_predict <- boost_fit %>% predict(train_sub)
+boost_train_predict %>%
   mutate(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
 
 # predict the test set and evaluate
-boost_val <- boost_fit %>% predict(test_sub) %>% 
+boost_test_predict <- boost_fit %>% predict(test_sub) 
+boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
-boost_val
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -865,7 +877,7 @@ knn_workflow_5 <- workflow() %>%
   add_model(knn_parsnip_5) %>%
   add_recipe(knn_recipe_5)
 
-knn_5s <- knn_workflow_5 %>% fit(train_sub)
+knn_5 <- knn_workflow_5 %>% fit(train_sub)
 
 
 # k=10 
@@ -908,14 +920,13 @@ knn_val1<- knn_workflow_5 %>%
     resamples = vfold_cv(train_sub, v = 10),
     metrics = metric_set(rmse, rsq, mae),
   )
-knn_val1 %>% collect_metrics()
+
 # k=10
 knn_val2 <- knn_workflow_10 %>%
   fit_resamples(
     resamples = vfold_cv(train_sub, v = 10),
     metrics = metric_set(rmse, rsq, mae),
   )
-knn_val2 %>% collect_metrics()
 
 # k=20
 knn_val3 <- knn_workflow_10 %>%
@@ -923,7 +934,6 @@ knn_val3 <- knn_workflow_10 %>%
     resamples = vfold_cv(train_sub, v = 10),
     metrics = metric_set(rmse, rsq, mae),
   )
-knn_val3 %>% collect_metrics()
 
 #
 metrics_knn <- bind_rows(
@@ -939,96 +949,113 @@ Since MAE and RMSE are measure of deviation of error, we would hope for a low va
 
 ```{r Heldout Metrics}
 # k=5 
-knn_parsnip_5t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 5)
+# knn_parsnip_5t <- nearest_neighbor() %>% 
+#   set_mode("regression") %>%
+#   set_engine("kknn", neighbors = 5)
+# 
+# knn_recipe_5t <- recipe(Disaster_Frequency ~ .,
+#                        data = test_sub) %>%
+#   step_dummy(all_nominal_predictors()) %>%
+#   step_normalize(all_numeric_predictors())
+# 
+# knn_workflow_5t <- workflow() %>%
+#   add_model(knn_parsnip_5t) %>%
+#   add_recipe(knn_recipe_5t)
 
-knn_recipe_5t <- recipe(Disaster_Frequency ~ .,
-                       data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_5t <- workflow() %>%
-  add_model(knn_parsnip_5t) %>%
-  add_recipe(knn_recipe_5t)
-
-knn_5t <- knn_workflow_5t %>% fit(test_sub)
+knn_5t <- knn_5 %>% predict(test_sub)
 
 # k=10 
-knn_parsnip_10t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 10)
+# knn_parsnip_10t <- nearest_neighbor() %>% 
+#   set_mode("regression") %>%
+#   set_engine("kknn", neighbors = 10)
+# 
+# knn_recipe_10t <- recipe(Disaster_Frequency ~ .,
+#                         data = test_sub) %>%
+#   step_dummy(all_nominal_predictors()) %>%
+#   step_normalize(all_numeric_predictors())
+# 
+# knn_workflow_10t <- workflow() %>%
+#   add_model(knn_parsnip_10t) %>%
+#   add_recipe(knn_recipe_10t)
 
-knn_recipe_10t <- recipe(Disaster_Frequency ~ .,
-                        data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_10t <- workflow() %>%
-  add_model(knn_parsnip_10t) %>%
-  add_recipe(knn_recipe_10t)
-
-knn_10t <- knn_workflow_10t %>% fit(test_sub)
+knn_10t <- knn_10 %>% predict(test_sub)
 
 
 # k=20 with standardization
-knn_parsnip_20t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 20)
+# knn_parsnip_20t <- nearest_neighbor() %>% 
+#   set_mode("regression") %>%
+#   set_engine("kknn", neighbors = 20)
+# 
+# knn_recipe_20t <- recipe(Disaster_Frequency ~ .,
+#                         data = test_sub) %>%
+#   step_dummy(all_nominal_predictors()) %>%
+#   step_normalize(all_numeric_predictors())
+# 
+# knn_workflow_20t <- workflow() %>%
+#   add_model(knn_parsnip_20t) %>%
+#   add_recipe(knn_recipe_20t)
 
-knn_recipe_20t <- recipe(Disaster_Frequency ~ .,
-                        data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_20t <- workflow() %>%
-  add_model(knn_parsnip_20t) %>%
-  add_recipe(knn_recipe_20t)
-
-knn_20t <- knn_workflow_20t %>% fit(test_sub)
-
-
-# validation
-# k=5
-knn_val1t<- knn_workflow_5t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val1t %>% collect_metrics()
-# k=10
-knn_val2t <- knn_workflow_10t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val2t %>% collect_metrics()
-
-# k=20
-knn_val3t <- knn_workflow_20t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val3t %>% collect_metrics()
+knn_20t <- knn_20 %>% predict(test_sub)
 
 
-metrics_knn_held <- bind_rows(
-  knn_val1t %>% collect_metrics(),
-  knn_val2t %>% collect_metrics(),
-  knn_val3t %>% collect_metrics(),
-  .id = "Model"
-) 
+# # validation
+# # k=5
+# knn_val1t<- knn_workflow_5t %>%
+#   fit_resamples(
+#     resamples = vfold_cv(test_sub, v = 10),
+#     metrics = metric_set(rmse,mae,rsq),
+#   )
+# knn_val1t %>% collect_metrics()
+# # k=10
+# knn_val2t <- knn_workflow_10t %>%
+#   fit_resamples(
+#     resamples = vfold_cv(test_sub, v = 10),
+#     metrics = metric_set(rmse,mae,rsq),
+#   )
+# knn_val2t %>% collect_metrics()
+# 
+# # k=20
+# knn_val3t <- knn_workflow_20t %>%
+#   fit_resamples(
+#     resamples = vfold_cv(test_sub, v = 10),
+#     metrics = metric_set(rmse,mae,rsq),
+#   )
+# knn_val3t %>% collect_metrics()
 
-metrics_knn_heldt <- metrics_knn_held %>% 
-  mutate(Model = dplyr::recode(Model, 
-                             "1" = "k = 5",
-                             "2" = "k = 10",
-                             "3" = "k = 20"
-                             )) %>% 
-  select(c(Model,.metric, .estimator, mean)) %>% 
-  pivot_wider(names_from = c(.metric), 
-                              values_from = mean)
+
+# metrics_knn_held <- bind_rows(
+#   knn_5t %>% collect_metrics(),
+#   knn_10t %>% collect_metrics(),
+#   knn_20t %>% collect_metrics(),
+#   .id = "Model"
+# ) 
+rsq_manual <- function (x, y){
+  cor(x, y) ^ 2
+}
+knn_5t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn10t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn20t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_20t$.pred)
+knn_5t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn_10t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn_20t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_20t$.pred)
+knn_5t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn_10t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
+data.frame(models = c("knn5", "knn10", "knn20"),
+           rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq), 
+           mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
+           rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse))
+
+
+# metrics_knn_heldt <- metrics_knn_held %>% 
+#   mutate(Model = dplyr::recode(Model, 
+#                              "1" = "k = 5",
+#                              "2" = "k = 10",
+#                              "3" = "k = 20"
+#                              )) %>% 
+#   select(c(Model,.metric, .estimator, mean)) %>% 
+#   pivot_wider(names_from = c(.metric), 
+#                               values_from = mean)
 ```
 
 ```{r K-Nearest Heldout Metrics}
@@ -1140,8 +1167,14 @@ word_cloud_df %>% ggplot() +
   facet_wrap(~Year)
 ```
 
+## Functions
+function defined in Random Forest model fitting chunk. 
+
 # Model Selection
 Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+```{r MAPE}
+
+```
 
 
 # Uncertainty Quantification
