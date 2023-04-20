@@ -7,8 +7,6 @@
 # an alternative to this is sMAPE. 
 # sMAPE lower bound is 0% and upper bound is 200%.
 
-out_sample_metric <- metric_set(yardstick::mape)
-
 RF_train_sMAPE <- RF_train_predict %>% 
   smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
   select(.estimate) %>% pull()
