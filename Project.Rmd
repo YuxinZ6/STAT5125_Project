@@ -3,7 +3,7 @@ title: "STAT5125_Project_Yuxin_Jen_Rene"
 author: "Yuxin Zhang, Jennifer Nguyen, Rene Chang"
 date: "2023-03-31"
 header-includes:
-  \usepackage{setspace}\doublespacing
+  \usepackage{setspace}\singlespacing
 output: 
   pdf_document:
     toc: true
@@ -831,7 +831,7 @@ poi_prediction_2 <- poi_fitted_enp %>% predict(test_sub) %>%
 poi_prediction_2
 
 poison_val<- bind_rows(poi_prediction_1,poi_prediction_2, .id="Model") %>% 
-  mutate(Model = recode(Model, 
+  mutate(Model = dplyr::recode(Model, 
                              "1" = "Poisson Lasso",
                              "2" = "Poisson Elastic Net",
                              )) %>% 
@@ -1018,7 +1018,7 @@ metrics_knn_held <- bind_rows(
   knn_val3t %>% collect_metrics(),
   .id = "Model"
 ) %>% 
-  mutate(Model = recode(Model, 
+  mutate(Model = dplyr::recode(Model, 
                              "1" = "k = 5",
                              "2" = "k = 10",
                              "3" = "k = 20"
@@ -1127,7 +1127,7 @@ Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squ
 Validation of held-out data has been performed above for each model. Below gathers all the held-out metrics from above into one table. 
 ```{r Cross Model Comparison}
 # Reformatting knn metric table to combine
-knn<-metrics_knn_held %>%  select(.metric, .estimator, mean) %>% rename(.estimate=mean) 
+knn<-metrics_knn_held %>%  select(Model, .estimator, mean) %>% rename(.estimate=mean) 
 knn_val_5 <-knn %>% slice(c(1:3))
 knn_val_10 <-knn %>% slice(c(4:6))
 knn_val_20 <-knn %>% slice(c(7:9))
@@ -1141,7 +1141,7 @@ val<- bind_rows(
   knn_val_10,
   knn_val_20,
   .id = "Model") %>% 
-  mutate(Model = recode(Model, 
+  mutate(Model = dplyr::recode(Model, 
                              "1" = "Random Forest",
                              "2" = "XG Boost",
                              "3" = "Poisson Lasso",
