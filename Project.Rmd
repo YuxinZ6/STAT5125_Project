@@ -849,8 +849,6 @@ poi_fitted_enp
                       goal_metrics(truth = truth, estimate = .pred)
   poi_prediction_2
 ```
-=======
->>>>>>> 40cadf09e8d4b76ebd4d43bca9f69dfb6ee9de99
 
 ```{r Poisson Heldout Validation}
 # poisson with lasso, prediction on test set
@@ -1048,7 +1046,7 @@ qqPlot(stand_resid, main = "QQ-norm Plot",
 mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
 ```
 
-```{r Partial Dependence Plot}
+```{r Partial Dependence Plot, fig.cap={"Partial Dependence Plot. Identifies the singificant factors among all within the dataset."}}
 # pull the variable importance from model 
 importance_df <- importance(RF_fit$fit$fit$fit) %>% data.frame()
 # obtain the top 10 important variables
