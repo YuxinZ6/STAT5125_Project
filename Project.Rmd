@@ -862,11 +862,11 @@ K-Nearest Neighbor is a simple yet effective algorithm, but its performance can 
 
 ```{r K-nearest}
 # Set seed
-set.seed(123457)
+set.seed(1111)
 # k=5 
 knn_parsnip_5 <- nearest_neighbor() %>% 
   set_mode("regression") %>%
-  set_engine("kknn", neighbors = 5)
+  set_engine("kknn", neighbors = 5000)
 
 knn_recipe_5 <- recipe(Disaster_Frequency ~ .,
                        data = train_sub) %>%
@@ -946,123 +946,31 @@ metrics_knn <- bind_rows(
 )
 metrics_knn
 ```
+
 Since MAE and RMSE are measure of deviation of error, we would hope for a low value. The hyperparameters chosen resulted in little difference between metrics. The MAE and RMSE exhibited the almost the same value of 2.6 and 4.3. R squared metric where $k=5$ is 0.37 and $k=10$ it is 0.40. This 3 percent increase continues in contrasting where $k=10$ and $k=20$, with $k=20$ having the best hyper-parameter of 0.43.
 
-
 ```{r Heldout Metrics}
-# k=5 
-knn_parsnip_5t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 5)
-
-knn_recipe_5t <- recipe(Disaster_Frequency ~ .,
-                       data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_5t <- workflow() %>%
-  add_model(knn_parsnip_5t) %>%
-  add_recipe(knn_recipe_5t)
-
-knn_5t <- knn_workflow_5t %>% fit(test_sub)
-
-# k=10 
-knn_parsnip_10t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 10)
-
-knn_recipe_10t <- recipe(Disaster_Frequency ~ .,
-                        data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_10t <- workflow() %>%
-  add_model(knn_parsnip_10t) %>%
-  add_recipe(knn_recipe_10t)
-
-knn_10t <- knn_workflow_10t %>% fit(test_sub)
+knn_5t <- knn_5 %>% predict(test_sub)
+knn_10t <- knn_10 %>% predict(test_sub)
+knn_20t <- knn_20 %>% predict(test_sub)
 
 
-# k=20 
-knn_parsnip_20t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 20)
-
-knn_recipe_20t <- recipe(Disaster_Frequency ~ .,
-                        data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_20t <- workflow() %>%
-  add_model(knn_parsnip_20t) %>%
-  add_recipe(knn_recipe_20t)
-
-knn_20t <- knn_workflow_20t %>% fit(test_sub)
-
-
-# validation
-# k=5
-knn_val1t<- knn_workflow_5t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val1t %>% collect_metrics()
-# k=10
-knn_val2t <- knn_workflow_10t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val2t %>% collect_metrics()
-
-# k=20
-knn_val3t <- knn_workflow_20t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val3t %>% collect_metrics()
-
-
-metrics_knn_held <- bind_rows(
-  knn_val1t %>% collect_metrics(),
-  knn_val2t %>% collect_metrics(),
-  knn_val3t %>% collect_metrics(),
-  .id = "Model"
-) 
-
-metrics_knn_heldt <- metrics_knn_held %>% 
-  mutate(Model = dplyr::recode(Model, 
-                             "1" = "k = 5",
-                             "2" = "k = 10",
-                             "3" = "k = 20"
-                             )) %>% 
-  select(c(Model,.metric, .estimator, mean)) %>% 
-  pivot_wider(names_from = c(.metric), 
-                              values_from = mean)
-# 
-# knn_5t <- knn_5 %>% predict(test_sub)
-# knn_10t <- knn_10 %>% predict(test_sub)
-# knn_20t <- knn_20 %>% predict(test_sub)
-# 
-# 
-# rsq_manual <- function (x, y){
-#   cor(x, y) ^ 2
-# }
-# knn_5t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_5t$.pred)
-# knn10t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_10t$.pred)
-# knn20t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_20t$.pred)
-# knn_5t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_5t$.pred)
-# knn_10t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_10t$.pred)
-# knn_20t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_20t$.pred)
-# knn_5t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_5t$.pred)
-# knn_10t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_10t$.pred)
-# knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
-# data.frame(models = c("knn5", "knn10", "knn20"),
-#            rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq), 
-#            mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
-#            rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse))
+rsq_manual <- function (x, y){
+  cor(x, y) ^ 2
+}
+knn_5t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn10t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn20t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_20t$.pred)
+knn_5t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn_10t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn_20t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_20t$.pred)
+knn_5t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn_10t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
+data.frame(models = c("knn5", "knn10", "knn20"),
+           rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq),
+           mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
+           rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse))
 ```
 
 ```{r K-Nearest Heldout Metrics}
@@ -1292,18 +1200,14 @@ From the metrics of held out data, it is clear random forest and XG boost outper
 # Result Communication
 One of the main human impact worsening climate change is our carbon foot print. With developing countries producing the most carbon dioxide from output of domestic controlled enterprises, this is correlated with the higher disaster frequency in these countries. 
 
-{add which variable contributed the most --- extract from random forest, if we can maybe visualize the tree?}
-
 The best model out of the five we have chosen is random forest. The model explains roughly 70 of the variation in the model. The mean of squared residuals (or mse) is 8.411. This implies that the fitted values are on average 8.411 away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at 2.17 and the mae at 1.05. From the rsq value of 0.84, we can conclude that the model explains approximately 84% of the variability in the disaster frequency.
+
+From our analysis, we can report Disaster frequency is highly correlated to CO2 emissions. Extracting from the randon forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_ Construction_Agriculture, and Output_Domestic_ Construct_Manufacturing. This concurs with the fifth visual produced "CO2 emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO2 produced.
 
 A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all 5 models. This means none of our model consists of the variable country. 
 
 With that said a suggestion for the future would be to include countries for a more comprehensive analysis. As the hyperparameter was tuned for random forest, the same can be done for k-nearest neighbor.
 
- --- 
-"Can we conclude that:" Disaster frequency is highly correlated to CO2 emissions.
-    Questions to answer of we can: Which sector and enterprise produced the most CO2?
- ---
 
 # Citation
 International Monetary Fund. 2022.Climate Change Indicators Dashboard. Climate Change Data and , https://climatedata.imf.org/pages/access-data. Accessed on [2023-03-15].
