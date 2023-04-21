@@ -65,6 +65,7 @@ library(yardstick)
 library(kknn)
 library(poissonreg)
 library(car)
+library(ggwordcloud)
 tidymodels_prefer()
 theme_set(theme_bw())
 
@@ -590,11 +591,22 @@ workflow_RF_train <- workflow() %>%
 
 # fit to the train data
 RF_fit <- workflow_RF_train %>% fit(data = train_sub) 
+
+# define function to calculate mae
+calculate_mae <- function(actual, predicted){
+  mae <- mean(abs(actual - predicted))
+}
+
+# define function to calculate rmse
+calculate_rmse <- function(actual, predicted){
+  mse <- mean((actual - predicted)^2)
+  rmse <- sqrt(mse)
+}
+
 # display result
 RF_rsq <- RF_fit$fit$fit$fit$rsq %>% mean()
-RF_mae <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2)
-RF_rmse <- mean((train_sub$Disaster_Frequency - RF_fit$fit$fit$fit$predicted)^2) %>%
-  sqrt()
+RF_mae <- calculate_mae(train_sub$Disaster_Frequency, RF_fit$fit$fit$fit$predicted)
+RF_rmse <- calculate_rmse(train_sub$Disaster_Frequency, RF_fit$fit$fit$fit$predicted)
 cat("Metrics of Random Forest: rsq =", RF_rsq, ", mae =", RF_mae, 
     ", and rmse=", RF_rmse, ".")
 ```
@@ -715,15 +727,16 @@ boost_fit$fit$fit$fit$evaluation_log %>% slice_min(training_rmse)
 We see that the performance of boosting on the train set is roughly the same as Random Forest, however a little lower. This is also true for boosting performance on the test set.
 ```{r XG-Boostnig Prediction} 
 # predict the train set and evaluate
-boost_fit %>% predict(train_sub) %>% 
+boost_train_predict <- boost_fit %>% predict(train_sub)
+boost_train_predict %>%
   mutate(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
 
 # predict the test set and evaluate
-boost_val <- boost_fit %>% predict(test_sub) %>% 
+boost_test_predict <- boost_fit %>% predict(test_sub) 
+boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
-boost_val
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -876,11 +889,11 @@ K-Nearest Neighbor is a simple yet effective algorithm, but its performance can 
 
 ```{r K-nearest}
 # Set seed
-set.seed(123457)
+set.seed(1111)
 # k=5 
 knn_parsnip_5 <- nearest_neighbor() %>% 
   set_mode("regression") %>%
-  set_engine("kknn", neighbors = 5)
+  set_engine("kknn", neighbors = 5000)
 
 knn_recipe_5 <- recipe(Disaster_Frequency ~ .,
                        data = train_sub) %>%
@@ -891,7 +904,7 @@ knn_workflow_5 <- workflow() %>%
   add_model(knn_parsnip_5) %>%
   add_recipe(knn_recipe_5)
 
-knn_5s <- knn_workflow_5 %>% fit(train_sub)
+knn_5 <- knn_workflow_5 %>% fit(train_sub)
 
 
 # k=10 
@@ -960,107 +973,35 @@ metrics_knn <- bind_rows(
 )
 metrics_knn
 ```
+
 Since MAE and RMSE are measure of deviation of error, we would hope for a low value. The hyperparameters chosen resulted in little difference between metrics. The MAE and RMSE exhibited the almost the same value of 2.6 and 4.3. R squared metric where $k=5$ is 0.37 and $k=10$ it is 0.40. This 3 percent increase continues in contrasting where $k=10$ and $k=20$, with $k=20$ having the best hyper-parameter of 0.43.
 
-
 ```{r Heldout Metrics}
-# k=5 
-knn_parsnip_5t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 5)
-
-knn_recipe_5t <- recipe(Disaster_Frequency ~ .,
-                       data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_5t <- workflow() %>%
-  add_model(knn_parsnip_5t) %>%
-  add_recipe(knn_recipe_5t)
-
-knn_5t <- knn_workflow_5t %>% fit(test_sub)
-
-# k=10 
-knn_parsnip_10t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 10)
-
-knn_recipe_10t <- recipe(Disaster_Frequency ~ .,
-                        data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_10t <- workflow() %>%
-  add_model(knn_parsnip_10t) %>%
-  add_recipe(knn_recipe_10t)
-
-knn_10t <- knn_workflow_10t %>% fit(test_sub)
+knn_5t <- knn_5 %>% predict(test_sub)
+knn_10t <- knn_10 %>% predict(test_sub)
+knn_20t <- knn_20 %>% predict(test_sub)
 
 
-# k=20 with standardization
-knn_parsnip_20t <- nearest_neighbor() %>% 
-  set_mode("regression") %>%
-  set_engine("kknn", neighbors = 20)
+rsq_manual <- function (x, y){
+  cor(x, y) ^ 2
+}
+knn_5t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn10t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn20t_rsq <- rsq_manual(test_sub$Disaster_Frequency, knn_20t$.pred)
+knn_5t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn_10t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn_20t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_20t$.pred)
+knn_5t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_5t$.pred)
+knn_10t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_10t$.pred)
+knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
+data.frame(models = c("knn5", "knn10", "knn20"),
+           rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq),
+           mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
+           rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse)) %>%
+  pivot_longer(cols = rsq:rmse)
 
-knn_recipe_20t <- recipe(Disaster_Frequency ~ .,
-                        data = test_sub) %>%
-  step_dummy(all_nominal_predictors()) %>%
-  step_normalize(all_numeric_predictors())
-
-knn_workflow_20t <- workflow() %>%
-  add_model(knn_parsnip_20t) %>%
-  add_recipe(knn_recipe_20t)
-
-knn_20t <- knn_workflow_20t %>% fit(test_sub)
-
-
-# validation
-# k=5
-knn_val1t<- knn_workflow_5t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val1t %>% collect_metrics()
-# k=10
-knn_val2t <- knn_workflow_10t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val2t %>% collect_metrics()
-
-# k=20
-knn_val3t <- knn_workflow_20t %>%
-  fit_resamples(
-    resamples = vfold_cv(test_sub, v = 10),
-    metrics = metric_set(rmse,mae,rsq),
-  )
-knn_val3t %>% collect_metrics()
-
-
-metrics_knn_held <- bind_rows(
-  knn_val1t %>% collect_metrics(),
-  knn_val2t %>% collect_metrics(),
-  knn_val3t %>% collect_metrics(),
-  .id = "Model"
-) 
-
-metrics_knn_heldt <- metrics_knn_held %>% 
-  mutate(Model = dplyr::recode(Model, 
-                             "1" = "k = 5",
-                             "2" = "k = 10",
-                             "3" = "k = 20"
-                             )) %>% 
-  select(c(Model,.metric, .estimator, mean)) %>% 
-  pivot_wider(names_from = c(.metric), 
-                              values_from = mean)
 ```
-
-```{r K-Nearest Heldout Metrics}
-metrics_knn_heldt
-```
-The models overall performed marginally better on the held-out data compared to the training data based on the MAE and RMSE. The best hyper-parameter in the test data is $k=10$ with MAE equal to 2.0 and RMSE with the value of 3.4. This model accounts for 48% of frequency.
+All k-nearest neighbor models generated the same predictive values leading to the same held_out metrics where mae equals to 2.45 and rmse to 3.94. The model accounts for only 47% of the variability of disaster frequency.
 
 
 # Model Assessment and Interpretation
@@ -1105,6 +1046,24 @@ qqPlot(stand_resid, main = "QQ-norm Plot",
 
 # setting a common title
 mtext("Diagnostic Plots", side = 3, line = -2, cex = 1.5, outer = TRUE)
+```
+
+```{r Partial Dependence Plot}
+# pull the variable importance from model 
+importance_df <- importance(RF_fit$fit$fit$fit) %>% data.frame()
+# obtain the top 10 important variables
+importance_df_top10 <- importance_df %>% rownames_to_column() %>% 
+  tibble() %>%
+  arrange(desc(IncNodePurity)) %>%
+  slice_max(order_by = IncNodePurity, n = 10) %>%
+  mutate_if(is.numeric, round, 2)
+# print the result
+importance_df_top10
+
+# plot the partial dependence plot
+varImpPlot(RF_fit$fit$fit$fit, 
+           main = "Partial Dependence Plot")
+
 ```
 
 # Add-Ons
@@ -1152,11 +1111,99 @@ train_loadings %>%
 
 ## Word Cloud
 ```{r}
+# prepping dataframe for the word cloud, dropping years 2017 and 2018 since they
+# do not contain any emission values.
+word_cloud_df <- df_long %>% select(-ISO3, Category, Disaster_Frequency) %>%
+  group_by(Year, Sector_abb) %>%
+  reframe(emission = sum(Value)) %>%
+  filter(!(Year == '2017' | Year == '2018'))
 
+# plot the word cloud, emission as sizing value and facet wrap by year
+word_cloud_df %>% ggplot() + 
+  geom_text_wordcloud(aes(label = Sector_abb, size = emission)) + 
+  scale_size_area(max_size = 2.8) + 
+  facet_wrap(~Year)
 ```
 
+## Functions
+Function defined in Random Forest model fitting chunk. 
+
 # Model Selection
-Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
+Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. Symmetric Mean Absolute Percentage Error (sMAPE) to measure the relative accuracy of a forecast.
+```{r MAPE}
+
+####Note: conflicts with knn code above, subject to edits.
+
+##########Must run knn_prediction_code.R before running this R script file#########
+# Out of sample metric: sMAPE
+# sMAPE = 1/n * (Σ|( Actual — Predicted)|/(Actual + Predicted/2))
+# sMAPE is useful when actual value contains zero, which in our case that 
+# disaster frequency is often 0.
+# using MAPE with actual value of 0 will result in infinity error because value is
+# not divisible by 0.
+# an alternative to this is sMAPE. 
+# sMAPE lower bound is 0% and upper bound is 200%.
+
+# calculate sMAPE for each models on both the train set and test set
+# random forest
+RF_train_sMAPE <- RF_train_predict %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+RF_test_sMAPE <- RF_test_predict %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+# xg-boost
+boost_train_sMAPE <- boost_train_predict %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+boost_test_sMAPE <- boost_test_predict %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+# poisson 
+poi_train_sMAPE <- poi_fitted %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+poi_test_sMAPE <- poi_fitted %>% predict(test_sub) %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+# knn
+knn5_train_sMAPE <- knn_5 %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn5_test_sMAPE <- knn_5t %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn10_train_sMAPE <- knn_10 %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn10_test_sMAPE <- knn_10t %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn20_train_sMAPE <- knn_20 %>% predict(train_sub) %>% 
+  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+knn20_test_sMAPE <- knn_20t %>% 
+  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
+  select(.estimate) %>% pull()
+
+# bind_rows(RF_train_sMAPE, RF_test_sMAPE, boost_train_sMAPE,
+#           boost_test_sMAPE, poi_train_sMAPE, poi_test_sMAPE,
+#           knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
+#           knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE)
+
+# organize results into one dataframe
+model_selection_result <- 
+  data.frame(prediction = c("RF_train", "RF_test", "Boost_train", "Boost_test", 
+                            "Poisson_train", "Poisson_test", "knn5_train", 
+                            "knn5_test", "knn10_train", "knn10_test",
+                            "knn20_train", "knn20_test"),
+             value = c(RF_train_sMAPE, RF_test_sMAPE, boost_train_sMAPE,
+                       boost_test_sMAPE, poi_train_sMAPE, poi_test_sMAPE,
+                       knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
+                       knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE))
+model_selection_result
+
+```
 
 
 # Uncertainty Quantification
@@ -1192,18 +1239,17 @@ val
 ```
 From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of 0.84 and 0.75. 
 
-```{r Applying Bootstrap to the Best Model}
-# set.seed(123457)
-# train_bootstrap <- train_sub %>% bootstraps(times = 25)
-# workflow_RF_boostrap <- workflow_RF %>% 
-#   fit_resamples(train_bootstrap, metrics = RF_metrics)
-```
-
-
 
 # Result Communication
-The best model out of the five we have chosen is random forest.
+One of the main human impact worsening climate change is our carbon foot print. With developing countries producing the most carbon dioxide from output of domestic controlled enterprises, this is correlated with the higher disaster frequency in these countries. 
 
+The best model out of the five we have chosen is random forest. The model explains roughly 70 of the variation in the model. The mean of squared residuals (or mse) is 8.411. This implies that the fitted values are on average 8.411 away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at 2.17 and the mae at 1.05. From the rsq value of 0.84, we can conclude that the model explains approximately 84% of the variability in the disaster frequency.
+
+From our analysis, we can report Disaster frequency is highly correlated to CO2 emissions. Extracting from the randon forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_ Construction_Agriculture, and Output_Domestic_ Construct_Manufacturing. This concurs with the fifth visual produced "CO2 emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO2 produced.
+
+A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all 5 models. This means none of our model consists of the variable country. 
+
+With that said a suggestion for the future would be to include countries for a more comprehensive analysis. As the hyperparameter was tuned for random forest, the same can be done for k-nearest neighbor.
 
 
 # Citation
