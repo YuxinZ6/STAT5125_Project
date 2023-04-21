@@ -1062,9 +1062,12 @@ importance_df_top10
 
 # plot the partial dependence plot
 varImpPlot(RF_fit$fit$fit$fit, 
-           main = "Partial Dependence Plot")
+           main = "Partial Dependence Plot", 
+           sub = "Partial Dependence Plot for top 10 importance variables") 
 
 ```
+
+  According to the Partial Dependence Plot, the variable Output_Domestic_Construction has the strongest effect on the target variable, disasters, followed by Output_Domestic_Agriculture, Output_Domestic_Manufacturing, and Output_Domestic_Food. The rest of variables shows a lot weaker effect on target variable, disasters. 
 
 # Add-Ons
 ## Principle Component Analysis
