@@ -18,4 +18,5 @@ knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
 data.frame(models = c("knn5", "knn10", "knn20"),
            rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq), 
            mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
-           rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse))
+           rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse)) %>%
+  pivot_longer(cols = rsq:rmse)

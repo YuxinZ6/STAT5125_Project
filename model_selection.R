@@ -69,3 +69,19 @@ model_selection_result <-
                        knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
                        knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE))
 model_selection_result
+
+
+# pull the variable importance from model 
+importance_df <- importance(RF_fit$fit$fit$fit) %>% data.frame()
+# obtain the top 10 important variables
+importance_df_top10 <- importance_df %>% rownames_to_column() %>% 
+  tibble() %>%
+  arrange(desc(IncNodePurity)) %>%
+  slice_max(order_by = IncNodePurity, n = 10) %>%
+  mutate_if(is.numeric, round, 2)
+# print the result
+importance_df_top10
+
+# plot the partial dependence plot
+varImpPlot(RF_fit$fit$fit$fit, 
+           main = "Partial Dependence Plot")
