@@ -728,15 +728,17 @@ We see that the performance of boosting on the train set is roughly the same as 
 ```{r XG-Boostnig Prediction} 
 # predict the train set and evaluate
 boost_train_predict <- boost_fit %>% predict(train_sub)
-boost_train_predict %>%
+boost_train_predict_metrics <- boost_train_predict %>%
   mutate(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
+boost_train_predict_metrics
 
 # predict the test set and evaluate
 boost_test_predict <- boost_fit %>% predict(test_sub) 
-boost_test_predict %>% 
+boost_test_predict_metrics <- boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
+boost_test_predict_metrics 
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -781,11 +783,10 @@ poi_fitted <- poi_workflow %>% fit(train_sub)
 poi_fitted
 ```
 
-<<<<<<< HEAD
 ```{r}
      goal_metrics <- metric_set(rmse, rsq, mae)
   # predict on test test
-  poi_prediction_1 <- poi_fitted %>% predict(test) %>%
+  poi_prediction_1 <- poi_fitted %>% predict(test_sub) %>%
                       mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
                       goal_metrics(truth = truth, estimate = .pred)
   poi_prediction_1
@@ -793,9 +794,6 @@ poi_fitted
 
 
 
-
-=======
->>>>>>> 40cadf09e8d4b76ebd4d43bca9f69dfb6ee9de99
 
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
 
@@ -839,12 +837,11 @@ poi_fitted_enp <- poi_workflow_enp %>% fit(train_sub)
 poi_fitted_enp 
 ```
 
-<<<<<<< HEAD
 ```{r}
     #metrics
     goal_metrics <- metric_set(rmse, rsq, mae)
     # predict on test test
-  poi_prediction_2 <- poi_fitted_enp %>% predict(test) %>%
+  poi_prediction_2 <- poi_fitted_enp %>% predict(test_sub) %>%
                       mutate(truth = test$Disaster_Frequency, estimate = .pred) %>%
                       goal_metrics(truth = truth, estimate = .pred)
   poi_prediction_2
@@ -903,6 +900,7 @@ knn_workflow_5 <- workflow() %>%
   add_recipe(knn_recipe_5)
 
 knn_5 <- knn_workflow_5 %>% fit(train_sub)
+knn_5_train_pred <- knn_5 %>% predict(train_sub)
 
 
 # k=10 
@@ -920,7 +918,7 @@ knn_workflow_10 <- workflow() %>%
   add_recipe(knn_recipe_10)
 
 knn_10 <- knn_workflow_10 %>% fit(train_sub)
-
+knn_10_train_pred <- knn_10 %>% predict(train_sub)
 
 # k=20
 knn_parsnip_20 <- nearest_neighbor() %>% 
@@ -937,6 +935,7 @@ knn_workflow_20 <- workflow() %>%
   add_recipe(knn_recipe_20)
 
 knn_20 <- knn_workflow_20 %>% fit(train_sub)
+knn_20_train_pred <- knn_20 %>% predict(train_sub)
 
 # In-Sample validation
 # k=5
@@ -963,13 +962,13 @@ knn_val3 <- knn_workflow_10 %>%
 knn_val3 %>% collect_metrics()
 
 #
-metrics_knn <- bind_rows(
+metrics_knn_held <- bind_rows(
   knn_val1 %>% collect_metrics(),
   knn_val2 %>% collect_metrics(),
   knn_val3 %>% collect_metrics(),
   .id = "Model"
 )
-metrics_knn
+metrics_knn_held
 ```
 
 Since MAE and RMSE are measure of deviation of error, we would hope for a low value. The hyperparameters chosen resulted in little difference between metrics. The MAE and RMSE exhibited the almost the same value of 2.6 and 4.3. R squared metric where $k=5$ is 0.37 and $k=10$ it is 0.40. This 3 percent increase continues in contrasting where $k=10$ and $k=20$, with $k=20$ having the best hyper-parameter of 0.43.
@@ -1004,7 +1003,7 @@ All k-nearest neighbor models generated the same predictive values leading to th
 
 # Model Assessment and Interpretation
 From the diagnostic plot, we can interpret that our model prediction complied well with the observed values. However, the dataset seems to contain quite a few outliers of which may have a significant effect on our model. 
-```{r Diagnostic Plots, fig.cap="Diagnostic plot of the random forest model. We see somewhat of a linear trend in the actual versus predicted plot (top left) with some outliers. This implies that majority of our prediction complied with the observed values except for a few outliers. The fitted versus residuals plot (top right) indicates no specific pattern. However, there does appears to be quite a few outliers. This also occured in the fitted versus standard residuals plot (bottom left). Finally, the qq-plot appears to be heavy-tailed."}
+```{r Diagnostic Plots, fig.cap={"Diagnostic plot of the random forest model. We see somewhat of a linear trend in the actual versus predicted plot (top left) with some outliers. This implies that majority of our prediction complied with the observed values except for a few outliers. The fitted versus residuals plot (top right) indicates no specific pattern. However, there does appears to be quite a few outliers. This also occured in the fitted versus standard residuals plot (bottom left). Finally, the qq-plot appears to be heavy-tailed."}}
 # Diagnostic Plots
 
 # setting up plot environment
@@ -1146,62 +1145,86 @@ Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squ
 # sMAPE lower bound is 0% and upper bound is 200%.
 
 # calculate sMAPE for each models on both the train set and test set
+
+# manually mutating the actual values to prevent NaN's in sMAPE later. 
+# It appears that there may have been multiple identical observations in the actual
+# value, causing the sMAPE to output NaN's for all of the prediction for knn. 
+train_actual <- train_sub$Disaster_Frequency %>% as_tibble() %>%
+  rename(actual = value) %>% 
+  mutate(actual = actual + 0.001)
+test_actual <- test_sub$Disaster_Frequency %>% as_tibble() %>%
+  rename(actual = value) %>% 
+  mutate(actual = actual + 0.001)
+
 # random forest
 RF_train_sMAPE <- RF_train_predict %>% 
-  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
-RF_test_sMAPE <- RF_test_predict %>% 
-  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred) 
+RF_test_sMAPE <- RF_test_predict %>%
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred)
 # xg-boost
 boost_train_sMAPE <- boost_train_predict %>% 
-  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred) 
 boost_test_sMAPE <- boost_test_predict %>% 
-  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
-# poisson 
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred) 
+# poisson lasso
 poi_train_sMAPE <- poi_fitted %>% predict(train_sub) %>% 
-  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred) 
 poi_test_sMAPE <- poi_fitted %>% predict(test_sub) %>% 
-  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred) 
+# poisson elastic net
+poi_fitted_enp_train_sMAPE <- poi_fitted_enp %>% predict(train_sub) %>%
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred) 
+poi_fitted_enp_test_sMAPE <- poi_fitted_enp %>% predict(test_sub) %>% 
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred) 
 # knn
-knn5_train_sMAPE <- knn_5 %>% predict(train_sub) %>% 
-  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+knn5_train_sMAPE <- knn_5_train_pred %>% 
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred)
 knn5_test_sMAPE <- knn_5t %>% 
-  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
-knn10_train_sMAPE <- knn_10 %>% predict(train_sub) %>% 
-  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred) 
+knn10_train_sMAPE <- knn_10_train_pred %>% 
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred) 
 knn10_test_sMAPE <- knn_10t %>% 
-  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
-knn20_train_sMAPE <- knn_20 %>% predict(train_sub) %>% 
-  smape(truth = train_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred) 
+knn20_train_sMAPE <- knn_20_train_pred %>% 
+  bind_cols(train_actual) %>%
+  smape(truth = actual, estimate = .pred) 
 knn20_test_sMAPE <- knn_20t %>% 
-  smape(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
-  select(.estimate) %>% pull()
+  bind_cols(test_actual) %>%
+  smape(truth = actual, estimate = .pred) 
 
-# bind_rows(RF_train_sMAPE, RF_test_sMAPE, boost_train_sMAPE,
-#           boost_test_sMAPE, poi_train_sMAPE, poi_test_sMAPE,
-#           knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
-#           knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE)
+model_selection_result <- bind_rows(RF_train_sMAPE, RF_test_sMAPE,
+                                    boost_train_sMAPE, boost_test_sMAPE,
+                                    poi_train_sMAPE, poi_test_sMAPE,
+                                    poi_fitted_enp_train_sMAPE, 
+                                    poi_fitted_enp_test_sMAPE,
+                                    knn5_train_sMAPE, knn5_test_sMAPE,
+                                    knn10_train_sMAPE,knn10_test_sMAPE,
+                                    knn20_train_sMAPE, knn20_test_sMAPE)
 
 # organize results into one dataframe
 model_selection_result <- 
-  data.frame(prediction = c("RF_train", "RF_test", "Boost_train", "Boost_test", 
-                            "Poisson_train", "Poisson_test", "knn5_train", 
-                            "knn5_test", "knn10_train", "knn10_test",
-                            "knn20_train", "knn20_test"),
-             value = c(RF_train_sMAPE, RF_test_sMAPE, boost_train_sMAPE,
-                       boost_test_sMAPE, poi_train_sMAPE, poi_test_sMAPE,
-                       knn5_train_sMAPE, knn5_test_sMAPE, knn10_train_sMAPE, 
-                       knn10_test_sMAPE, knn20_train_sMAPE, knn20_test_sMAPE))
+  data.frame(prediction = c("RF_train", "RF_test", 
+                            "Boost_train", "Boost_test", 
+                            "Poisson_lasso_train", "Poisson_lasso_test", 
+                            "Poisson_elastic_net_train", "Poisson_elastic_net_test", 
+                            "knn5_train", "knn5_test", 
+                            "knn10_train", "knn10_test",
+                            "knn20_train", "knn20_test")) %>% 
+  as_tibble() %>% 
+  bind_cols(model_selection_result)
+
 model_selection_result
 
 ```
@@ -1218,7 +1241,7 @@ knn_val_20 <-knn %>% slice(c(7:9))
 
 val<- bind_rows(
   RF_train_predict_metric,
-  boost_val,
+  boost_train_predict_metrics,
   poi_prediction_1,
   poi_prediction_2,
   knn_val_5,
@@ -1246,12 +1269,12 @@ One of the main human impact worsening climate change is our carbon foot print. 
 
 The best model out of the five we have chosen is random forest. The model explains roughly 70 of the variation in the model. The mean of squared residuals (or mse) is 8.411. This implies that the fitted values are on average 8.411 away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at 2.17 and the mae at 1.05. From the rsq value of 0.84, we can conclude that the model explains approximately 84% of the variability in the disaster frequency.
 
-From our analysis, we can report Disaster frequency is highly correlated to CO2 emissions. Extracting from the randon forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_ Construction_Agriculture, and Output_Domestic_ Construct_Manufacturing. This concurs with the fifth visual produced "CO2 emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO2 produced.
+From our analysis, we can report Disaster frequency is highly correlated to CO2 emissions. Extracting from the randon forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_Construction_Agriculture, and Output_Domestic_Construct_Manufacturing. This concurs with the fifth visual produced "CO2 emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO2 produced.
 
 A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all 5 models. This means none of our model consists of the variable country. 
 
 With that said a suggestion for the future would be to include countries for a more comprehensive analysis. As the hyperparameter was tuned for random forest, the same can be done for k-nearest neighbor.
 
 
-# Citation
+# Citation 
 International Monetary Fund. 2022.Climate Change Indicators Dashboard. Climate Change Data and , https://climatedata.imf.org/pages/access-data. Accessed on [2023-03-15].
