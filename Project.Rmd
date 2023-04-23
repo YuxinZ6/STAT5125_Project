@@ -16,27 +16,27 @@ fontsize: 11pt
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # Introduction and Motivation
-Climate change is not a new problem. Although the earliest research was published in the late 1800s, this topic was not taken as a serious global issue until the 1960s.
+Climate change is not a new problem. Although the earliest research was published in the late $1800$s, this topic was not taken as a serious global issue until the $1960$s.
 
 As the problem of climate change becomes increasingly urgent, data science is also being recognized as an essential tool in the fight against climate change. The skills in data science will allow better understanding of the complex interplay of various environmental factors and take proactive steps to reduce our impact on the planet.
 
-One of the main human impact worsening climate change is our carbon foot print. This leads the motivation of our project to analyze the CO2 emissions produced. The data is sourced from the International Monetary Fund climate change data dashboard. Their mission is to achieve sustainable growth and prosperity for all of its 190 member countries by supporting economic policies that promote financial stability and monetary cooperation, which are essential to increase productivity, job creation, and economic well-being. 
+One of the main human impact worsening climate change is our carbon foot print. This leads the motivation of our project to analyze the CO$2$ emissions produced. The data is sourced from the International Monetary Fund climate change data dashboard. Their mission is to achieve sustainable growth and prosperity for all of its $190$ member countries by supporting economic policies that promote financial stability and monetary cooperation, which are essential to increase productivity, job creation, and economic well-being. 
 
 With that said, this project will be analyzing the combination of two data sets; Direct Investment related indicators and Climate related disaster frequency.
 
-Our combine data consists of CO2 emissions (in Metric Tons) of 60 different countries spanning from 2005 to 2018 by 4 types of enterprise and 15 sectors. There are four types of enterprise of focus; exports of domestic controlled enterprises, exports of foreign controlled multinational enterprises, output of domestic controlled enterprises, and output of foreign controlled multinational enterprises.
+Our combine data consists of CO$2$ emissions (in Metric Tons) of $60$ different countries spanning from $2005$ to $2018$ by $4$ types of enterprise and $15$ sectors. There are four types of enterprise of focus; exports of domestic controlled enterprises, exports of foreign controlled multinational enterprises, output of domestic controlled enterprises, and output of foreign controlled multinational enterprises.
 
-With 826 total observations and 59 combined variables, we hope to account for the frequency of disaster events by country and year with models listed below in the outline.
+With $826$ total observations and $59$ combined variables, we hope to account for the frequency of disaster events by country and year with models listed below in the outline.
 
 ## Outline
   - Data pre-processing and tidying (including test/train split)
   - Reasoning of research question
   - Visualizations
       * Disaster by Year
-      * World Map of CO2 Emissions
+      * World Map of CO$2$ Emissions
       * Disaster by Year for Each Country
       * Emission versus Disaster Count for Each Country
-      * CO2 Emissions by Type of Enterprise
+      * CO$2$ Emissions by Type of Enterprise
   - Modeling:
       * Random Forest
       * XG-Boosting
@@ -79,12 +79,12 @@ unregister_dopar()
 ```
 
 ## Read in Data and Cleaning
-In this project, we utilized two datasets, 11_Direct_Investment_related_indicators.csv and 24_Climate_related_Diasters_Frequency.csv. The former dataset contains CO2 emission for each country from years 2005 to 2018, for each country, sectors, and relative to either export or domestic of either domestically or foreign controlled enterprises. The later dataset contains disaster count from years 1980 to 2019 for each country and by different types of diaster. 
+In this project, we utilized two datasets, $11$\_Direct\_Investment\_related\_indicators\.csv and $24$\_Climate\_related\_Diasters\_Frequency\.csv. The former dataset contains CO$2$ emission for each country from years $2005$ to $2018$, for each country, sectors, and relative to either export or domestic of either domestically or foreign controlled enterprises. The later dataset contains disaster count from years $1980$ to $2019$ for each country and by different types of disaster. 
 
 ### Cleaning Dataset 11_Direct_Investment-related_Indicators
-In order to organize the raw data, four different dictionaries were created and selected our variables of interest (Country, Year 2005 to 2018, Sector and Enterprise type).
+In order to organize the raw data, four different dictionaries were created and selected our variables of interest (Country, Year $2005$ to $2018$, Sector and Enterprise type).
 
-The raw data consisted of 51 sectors many were related to each other. Sectors that deemed to be related or in the same job family were combined. For example, "Mining and extraction of energy producing products","Mining and quarrying of non-energy producing products", and "Mining support service activities" were combined under mining.
+The raw data consisted of $51$ sectors many were related to each other. Sectors that deemed to be related or in the same job family were combined. For example, "Mining and extraction of energy producing products","Mining and quarrying of non-energy producing products", and "Mining support service activities" were combined under mining.
 
 ```{r Cleaning dataset 11_Direct_Investment-related_Indicators}
 ####### Cleaning data set 11_Direct_Investment-related_Indicators #######
@@ -198,7 +198,7 @@ rm(tmp, investment_indicators)
 ```
 
 ### Cleaning Dataset 24_Climate-related_Diasters_Frequency
-The following shows the left join of the second data set "Climate-related_Diasters_Frequency" by country and year.
+The following shows the left join of the second data set "Climate-related\_Diasters\_Frequency" by country and year.
 ```{r Cleaning dataset 24_Climate-related_Diasters_Frequency}
 ####### Cleaning dataset 24_Climate-related_Diasters_Frequency#######
 disasters_frequency <- read_csv("24_Climate-related_Disasters_Frequency.csv")
@@ -301,7 +301,7 @@ test_sub <- test %>% select(-c(ISO3))
 ```
 
 # Defining the Research Question
-To examine the effects of domestically- versus foreign- controlled enterprises' CO2 emissions relative to sectors of activities performed for each country on climate related disasters. 
+To examine the effects of domestically- versus foreign- controlled enterprises' CO$2$ emissions relative to sectors of activities performed for each country on climate related disasters. 
 The models that we will approach are as the following:
 - (Rene) Poisson Generalized Linear Regression Model with Lasso Penalty
   - Lasso Penalty will be determined through cross validation. 
@@ -309,13 +309,13 @@ The models that we will approach are as the following:
   - cross validation to determine the best penalty rate
 - (Yuxin) Random Forest
   - pass along several possible combinations of hyper-parameters and perform cross validation
-    - maximum depth, minimum number of samples at each split, n_estimators (4 for each)
+    - maximum depth, minimum number of samples at each split, n\_estimators ($4$ for each)
     - parallel computing
 - (Jen) K-Nearest Neighbors Regression
   - cross validation to determine the best k
 - (Yuxin) XG-Boost
   - pass along several possible combinations of hyper-parameters and perform cross validation
-  - maximum depth, minimum number of samples at each split, n_estimators (4 for each)
+  - maximum depth, minimum number of samples at each split, n\_estimators ($4$ for each)
   - parallel computing
   
 TARGET VARIABLE: Disaster_Frequency
@@ -325,14 +325,14 @@ graphics:
   - color code by sector (t.s. plot)
 - (Rene) line graph of aggregated count of disasters cross years. 
   - t.s. plot
-- (Jen) world map and co2 emission (optional)
-  - aggregating the co2 emission across all years, and rank by country.
+- (Jen) world map and CO$2$ emission (optional)
+  - aggregating the CO$2$ emission across all years, and rank by country.
   - ranking is going to be done by color. (gradient color, red is worse, while green is better)
-- (Jen) co2 emission by country (do first, if time then do map)
-- (Jen) bar graphs of *df_long* category column, x_axis is year. 
+- (Jen) CO$2$ emission by country (do first, if time then do map)
+- (Jen) bar graphs of *df_long* category column, x\_axis is year. 
   - facet wrap by category
-- (Yuxin) scatter plot, x-axis will be co2 emission, y-axis will be count of disasters. 
-  - because count of disaster goes by year, then we will need to aggregate the co2 emission by country and by year. so we sum all of the sectors and types of co2 emissions. 
+- (Yuxin) scatter plot, x-axis will be CO$2$ emission, y-axis will be count of disasters. 
+  - because count of disaster goes by year, then we will need to aggregate the CO$2$ emission by country and by year. So we sum all of the sectors and types of CO$2$ emissions. 
 
 # Visualizations
 Climate change is a global issue leading to higher natural disasters frequency. The line graph below depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
@@ -357,7 +357,7 @@ ggplot(df_aggregate_2, aes(x = Year, y = total_disaster_frequency)) +
        y = "Sum Disaster Frequency")
 ```
 
-Carbon dioxide is a greenhouse gas that traps heat in the atmosphere, leading to global warming and climate change. It is produce primarily from human activities such as burning fossil fuels for energy, transportation, and other industry sectors. Below is a map of CO2 emissions produce in each country with red being the higher end of the spectrum and white being little CO2 produced. 
+Carbon dioxide is a greenhouse gas that traps heat in the atmosphere, leading to global warming and climate change. It is produce primarily from human activities such as burning fossil fuels for energy, transportation, and other industry sectors. Below is a map of CO$2$ emissions produce in each country with red being the higher end of the spectrum and white being little CO$2$ produced. 
 
 ```{r data prep for map visualization}
 # load world data for map
@@ -396,7 +396,7 @@ world <- world %>% full_join(bind, by = c("region" ="Country"))
 world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 ```
 This data preparation is necessary for the map to join in order to include all the data points.
-```{r Map of CO2 Emisions, fig.cap={"Map of CO$2$ emission recorded in our dataset. Fill is by log of metric tons of CO$2$ emission. Hue closer to red indicates more emission. "}}
+```{r Map of CO$2$ Emisions, fig.cap={"Map of CO$2$ emission recorded in our dataset. Fill is by log of metric tons of CO$2$ emission. Hue closer to red indicates more emission. "}}
 # plot the map, set emission as fill color. 
 ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   geom_polygon(color="gray") +
@@ -406,9 +406,9 @@ ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   ggtitle("Map of CO2 Emission Recorded in Dataset") +
   labs(fill='Log of Metric \nTons of CO2 \nEmission')
 ```
-It is depicted that developed countries, such as the United States, China, Russia, and parts of Europe, produces more CO2 emission than underdeveloped countries.
+It is depicted that developed countries, such as the United States, China, Russia, and parts of Europe, produces more CO$2$ emission than underdeveloped countries.
 
-After seeing the countries with prolific production of CO2 emission, we have suspects for those that may have higher frequency of natural disasters. The graph below counts the number of disasters by year colored based on countries. This figure confirms our suspicions of more disasters will occur in developed countries. 
+After seeing the countries with prolific production of CO$2$ emission, we have suspects for those that may have higher frequency of natural disasters. The graph below counts the number of disasters by year colored based on countries. This figure confirms our suspicions of more disasters will occur in developed countries. 
 
 The top 3 countries with the most disasters are USA, China, and India.
 
@@ -434,7 +434,7 @@ ggplot(df_aggregate_1, aes(x = Year, y = total_disaster, color = ISO3)) +
        color = "Country") 
 ```
 
-In the scatterplot below, we explored the countries with most disaster by the log of CO2 emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this faceted scatter plot, there is a lack of data for 2017 and 2018. USA, China, and India consistently is in the top producers of carbon dioxide correlating with higher count of disasters by year.
+In the scatterplot below, we explored the countries with most disaster by the log of CO$2$ emissions by metric tons. This graph only includes countries with greater than 10 events and is faceted by year. As you can see from this faceted scatter plot, there is a lack of data for 2017 and 2018. USA, China, and India consistently is in the top producers of carbon dioxide correlating with higher count of disasters by year.
 
 ```{r Scatterplot, fig.cap={"Emission versus diaster count for each country. In this plot, country with more than $10$ diasters per year are highlighted. There appears to be a linear relationship between the log of emission and disaster count. Countries such as China and USA consistently have greater than $10$ diasters for every year."}}
 # optimize data for scatter plot
@@ -464,9 +464,9 @@ The four types of enterprises are exports of domestic controlled enterprises, ex
 
 Exports are shipment of goods or services from one country to another. Output refers to the production of goods or services within a particular industry or sector. Domestic refers to products or services that are produced or provided within a particular country and intended for use or consumption within that country. Foreign refers to products or services that are produced or provided outside of one's own country and intended for use or consumption in other countries. The type of enterprises will be a combination of either export or output and foreign or domestic. For example, exports of domestic controlled enterprises ('Export_Domestics') are goods that are produced by companies that are headquartered outside the country where they are sold.
 
-The stacked bar graph depicts the CO2 emissions produced by the category of enterprises.
+The stacked bar graph depicts the CO$2$ emissions produced by the category of enterprises.
 
-```{r CO2 Emissions by Type of Enterprise, fig.cap={"CO$2$ emissions by category of enterprise for each country. USA seems to come in the first place in terms of CO$2$ emission, followed by India and China. The emissions of China and India are relatively the same. As a general trend, Output Domestic seems to be the major contributor of CO$2$ emission."}}
+```{r CO$2$ Emissions by Type of Enterprise, fig.cap={"CO$2$ emissions by category of enterprise for each country. USA seems to come in the first place in terms of CO$2$ emission, followed by India and China. The emissions of China and India are relatively the same. As a general trend, Output Domestic seems to be the major contributor of CO$2$ emission."}}
 # prep the dataframe for bar plot.
 df_agg <- df_long %>% 
   group_by(ISO3, Category) %>%
@@ -487,7 +487,7 @@ ggplot(df_agg,aes(x = ISO3, y = emission, fill = Category)) +
   ) 
 ```
 
-In developed countries, output of domestic controlled enterprises produce the most CO2 emissions by metric tons in comparison to other categories. Therefore, the most CO2 produced are from the goods or services produced by companies that are owned and controlled within the country where they operate. This indicates countries like the USA are producing goods that feeds back into its own economy.
+In developed countries, output of domestic controlled enterprises produce the most CO$2$ emissions by metric tons in comparison to other categories. Therefore, the most CO$2$ produced are from the goods or services produced by companies that are owned and controlled within the country where they operate. This indicates countries like the USA are producing goods that feeds back into its own economy.
 
 
 # Modeling
@@ -742,7 +742,7 @@ boost_test_predict_metrics
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
-Poisson generalized linear regression model is commonly used for count data analysis, where the outcome variable on interest is disaster frequency with the 58 combination of sectors and category of enterprises are the predictors.
+Poisson generalized linear regression model is commonly used for count data analysis, where the outcome variable on interest is disaster frequency with the $58$ combination of sectors and category of enterprises are the predictors.
 
 The Lasso penalty will help regularize and shrink the coefficients of the predictor variables towards zero, effectively eliminating some of the less important predictors from the model.
 
@@ -773,7 +773,7 @@ poi_result <- poi_workflow %>%
     )
 ```
 
-Metrics for the training data below shows unfavorable results with MAE and RMSE values in the seven or eight figures. The RSq value indicating only a 21.7% of accountability for this model.
+Metrics for the training data below shows unfavorable results with MAE and RMSE values in the seven or eight figures. The RSQ value indicating only a $21.7\%$ of accountability for this model.
 
 ```{r Poisson Lasso Results}
 # showing results 
@@ -797,7 +797,7 @@ poi_fitted
 
 ## Poisson Generalized Linear Regression Model with Elastic Net Penalty
 
-Poisson with elastic net allows 2 penalties that can be used to select the most important predictors and avoid overfitting, even in the presence of multicollinearity or high-dimensional data. 
+Poisson with elastic net allows $2$ penalties that can be used to select the most important predictors and avoid overfitting, even in the presence of multicollinearity or high-dimensional data. 
 
 ```{r Poisson Elastic Net: define workflow}
 #  Poisson Generalized Linear Model with Elastic Net Penalty
@@ -824,7 +824,7 @@ poi_result_enp <- poi_workflow_enp %>%
     )
 ```
 
-Metrics for the Poisson with elastic net below shows unfavorable results with MAE and RMSE values in the five or six figures. The RSq value indicating only a 26.8% of accountability for this model. Although this is slightly better than the Poisson with lasso, it is still extremely unfavorable compared to XG-Boost and Random Forest models.
+Metrics for the Poisson with elastic net below shows unfavorable results with MAE and RMSE values in the five or six figures. The RSq value indicating only a $26.8\%$ of accountability for this model. Although this is slightly better than the Poisson with lasso, it is still extremely unfavorable compared to XG-Boost and Random Forest models.
 
 ```{r Poisson Elastic Net Results}
 # showing results
@@ -971,7 +971,7 @@ metrics_knn_held <- bind_rows(
 metrics_knn_held
 ```
 
-Since MAE and RMSE are measure of deviation of error, we would hope for a low value. The hyperparameters chosen resulted in little difference between metrics. The MAE and RMSE exhibited the almost the same value of 2.6 and 4.3. R squared metric where $k=5$ is 0.37 and $k=10$ it is 0.40. This 3 percent increase continues in contrasting where $k=10$ and $k=20$, with $k=20$ having the best hyper-parameter of 0.43.
+Since MAE and RMSE are measure of deviation of error, we would hope for a low value. The hyperparameters chosen resulted in little difference between metrics. The MAE and RMSE exhibited the almost the same value of $2.6$ and $4.3$. R squared metric where $k=5$ is $0.37$ and $k=10$ it is $0.40$. This $3$ percent increase continues in contrasting where $k=10$ and $k=20$, with $k=20$ having the best hyper-parameter of $0.43$.
 
 ```{r Heldout Metrics}
 knn_5t <- knn_5 %>% predict(test_sub)
@@ -998,7 +998,7 @@ data.frame(models = c("knn5", "knn10", "knn20"),
   pivot_longer(cols = rsq:rmse)
 
 ```
-All k-nearest neighbor models generated the same predictive values leading to the same held_out metrics where mae equals to 2.45 and rmse to 3.94. The model accounts for only 47% of the variability of disaster frequency.
+All k-nearest neighbor models generated the same predictive values leading to the same held_out metrics where mae equals to $2.45$ and rmse to $3.94$. The model accounts for only $47\%$ of the variability of disaster frequency.
 
 
 # Model Assessment and Interpretation
@@ -1261,17 +1261,17 @@ val<- bind_rows(
 val
 
 ```
-From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of 0.84 and 0.75. 
+From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of $0.84$ and $0.75$. 
 
 
 # Result Communication
 One of the main human impact worsening climate change is our carbon foot print. With developing countries producing the most carbon dioxide from output of domestic controlled enterprises, this is correlated with the higher disaster frequency in these countries. 
 
-The best model out of the five we have chosen is random forest. The model explains roughly 70 of the variation in the model. The mean of squared residuals (or mse) is 8.411. This implies that the fitted values are on average 8.411 away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at 2.17 and the mae at 1.05. From the rsq value of 0.84, we can conclude that the model explains approximately 84% of the variability in the disaster frequency.
+The best model out of the five we have chosen is random forest. The model explains roughly $70$ of the variation in the model. The mean of squared residuals (or mse) is $8.411$. This implies that the fitted values are on average $8.411$ away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at $2.17$ and the mae at $1.05$. From the rsq value of $0.84$, we can conclude that the model explains approximately $84\%$ of the variability in the disaster frequency.
 
-From our analysis, we can report Disaster frequency is highly correlated to CO2 emissions. Extracting from the randon forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_Construction_Agriculture, and Output_Domestic_Construct_Manufacturing. This concurs with the fifth visual produced "CO2 emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO2 produced.
+From our analysis, we can report Disaster frequency is highly correlated to CO$2$ emissions. Extracting from the random forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_Construction_Agriculture, and Output_Domestic_Construct_Manufacturing. This concurs with the fifth visual produced "CO$2$ emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO$2$ produced.
 
-A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all 5 models. This means none of our model consists of the variable country. 
+A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all $5$ models. This means none of our model consists of the variable country. 
 
 With that said a suggestion for the future would be to include countries for a more comprehensive analysis. As the hyperparameter was tuned for random forest, the same can be done for k-nearest neighbor.
 
