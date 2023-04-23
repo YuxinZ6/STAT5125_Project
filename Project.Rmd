@@ -2,12 +2,15 @@
 title: "STAT5125_Project_Yuxin_Jen_Rene"
 author: "Yuxin Zhang, Jennifer Nguyen, Rene Chang"
 date: "2023-03-31"
-header-includes:
-  \usepackage{setspace}\singlespacing
-output: 
+output:
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
   pdf_document:
-    toc: true
+    toc: yes
     toc_depth: 3
+header-includes: \usepackage{setspace}\singlespacing
 urlcolor: blue
 fontsize: 11pt
 ---
