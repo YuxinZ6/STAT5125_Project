@@ -396,7 +396,7 @@ world <- world %>% full_join(bind, by = c("region" ="Country"))
 world <- world %>% mutate_all(~ ifelse(is.na(.), 0, .))
 ```
 This data preparation is necessary for the map to join in order to include all the data points.
-```{r Map of CO$2$ Emisions, fig.cap={"Map of CO$2$ emission recorded in our dataset. Fill is by log of metric tons of CO$2$ emission. Hue closer to red indicates more emission. "}}
+```{r Map of CO2 Emisions, fig.cap={"Map of CO$2$ emission recorded in our dataset. Fill is by log of metric tons of CO$2$ emission. Hue closer to red indicates more emission. "}}
 # plot the map, set emission as fill color. 
 ggplot(world, aes(long, lat, group=group, fill = log(Value+1))) +
   geom_polygon(color="gray") +
@@ -466,7 +466,7 @@ Exports are shipment of goods or services from one country to another. Output re
 
 The stacked bar graph depicts the CO$2$ emissions produced by the category of enterprises.
 
-```{r CO$2$ Emissions by Type of Enterprise, fig.cap={"CO$2$ emissions by category of enterprise for each country. USA seems to come in the first place in terms of CO$2$ emission, followed by India and China. The emissions of China and India are relatively the same. As a general trend, Output Domestic seems to be the major contributor of CO$2$ emission."}}
+```{r CO2 Emissions by Type of Enterprise, fig.cap={"CO$2$ emissions by category of enterprise for each country. USA seems to come in the first place in terms of CO$2$ emission, followed by India and China. The emissions of China and India are relatively the same. As a general trend, Output Domestic seems to be the major contributor of CO$2$ emission."}}
 # prep the dataframe for bar plot.
 df_agg <- df_long %>% 
   group_by(ISO3, Category) %>%
