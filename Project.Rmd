@@ -7,10 +7,7 @@ output:
     toc: yes
     toc_depth: '3'
     df_print: paged
-  pdf_document:
-    toc: yes
-    toc_depth: 3
-header-includes: \usepackage{setspace}\singlespacing
+header-includes: \usepackage{setspace}\doublespacing
 urlcolor: blue
 fontsize: 11pt
 ---
