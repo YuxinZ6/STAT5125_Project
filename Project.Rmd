@@ -1193,6 +1193,7 @@ knn20_test_sMAPE <- knn_20t %>%
   bind_cols(test_actual) %>%
   smape(truth = actual, estimate = .pred) 
 
+# gather results
 model_selection_result <- bind_rows(RF_train_sMAPE, RF_test_sMAPE,
                                     boost_train_sMAPE, boost_test_sMAPE,
                                     poi_train_sMAPE, poi_test_sMAPE,
@@ -1214,8 +1215,8 @@ model_selection_result <-
   as_tibble() %>% 
   bind_cols(model_selection_result)
 
+# display the smape performance for all models
 model_selection_result
-
 ```
 
 
@@ -1230,6 +1231,7 @@ knn_val_5 <-knn %>% slice(c(1:3))
 knn_val_10 <-knn %>% slice(c(4:6))
 knn_val_20 <-knn %>% slice(c(7:9))
 
+# gather validation result for all models. 
 val<- bind_rows(
   RF_train_predict_metric,
   boost_train_predict_metrics,
@@ -1251,7 +1253,7 @@ val<- bind_rows(
                               values_from = .estimate)
 val
 ```
-From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of $0.84$ and $0.75$. 
+From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of $0.84$ and $0.81$. 
 
 
 # Result Communication
