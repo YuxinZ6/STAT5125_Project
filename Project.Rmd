@@ -1071,9 +1071,16 @@ varImpPlot(RF_fit$fit$fit$fit,
 
 ```
 
-  According to the Partial Dependence Plot, the variable Output_Domestic_Construction has the strongest effect on the target variable, disasters, followed by Output_Domestic_Agriculture, Output_Domestic_Manufacturing, and Output_Domestic_Food. The rest of variables shows a lot weaker effect on target variable, disasters. 
+According to the Partial Dependence Plot, the variable Output_Domestic_Construction has the strongest effect on the target variable, disasters, followed by Output_Domestic_Agriculture, Output_Domestic_Manufacturing, and Output_Domestic_Food. The rest of variables shows a lot weaker effect on target variable, disasters. 
 
 # Add-Ons
+The five add on we have chosen are listed below.
+- **Github repository**: https://github.com/YuxinZ6/STAT5125_Project.git
+- **Relevant Map**: Chunk 9 or line 399-408 above
+- **Principle Component Analysis**
+- **Function**: Chunk 16 or 593-604
+- **Word cloud graphic**: Prominent sectors by year.
+
 ## Principle Component Analysis
 From a quick investigation in the variables using Principle Component Analysis, we see that the first four principle components explained roughly $74.789\%$ of the variances in the dataset. A closer look at the first four principle components then revealed that only the first principle component is interpretable. In the first principle component, all factors have negative effects while only the year factor has positive effect.
 ```{r PCA, fig.cap={"Percentage of Vairnaces Explained by Each Principle Components. The first couple principle components seems to add up to the majority of the percentage of variances."}}
@@ -1117,7 +1124,7 @@ train_loadings %>%
 ```
 
 ## Word Cloud
-```{r}
+```{r Word Cloud}
 # prepping dataframe for the word cloud, dropping years 2017 and 2018 since they
 # do not contain any emission values.
 word_cloud_df <- df_long %>% select(-ISO3, Category, Disaster_Frequency) %>%
@@ -1277,7 +1284,7 @@ One of the main human impact worsening climate change is our carbon foot print. 
 
 The best model out of the five we have chosen is random forest. The model explains roughly $70$ of the variation in the model. The mean of squared residuals (or mse) is $8.411$. This implies that the fitted values are on average $8.411$ away from the observed values. In addition, the error metrics were significantly lower than the other models with rmse at $2.17$ and the mae at $1.05$. From the rsq value of $0.84$, we can conclude that the model explains approximately $84\%$ of the variability in the disaster frequency.
 
-From our analysis, we can report Disaster frequency is highly correlated to CO$2$ emissions. Extracting from the random forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_Construction_Agriculture, and Output_Domestic_Construct_Manufacturing. This concurs with the fifth visual produced "CO$2$ emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO$2$ produced.
+From our analysis, we can report Disaster frequency is highly correlated to CO$2$ emissions. Extracting from the random forest, the 'Partial Dependence Plot' the most influential variables are Output_Domestic_Construction, Output_Domestic_Construction_Agriculture, and Output_Domestic_Construct_Manufacturing. This concurs with the fifth visual produced "CO$2$ emissions by Category of Enterprise for Each Country," where Output_Domestic contributes to the most CO$2$ produced. Based on the world cloud, the most prominent sectors are transportation and energy.
 
 A problem we encountered that we were not able to fix, is to run the Poisson models with the countries. To keep our models consistent, we used the same training data for all $5$ models. This means none of our model consists of the variable country. 
 
