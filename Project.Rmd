@@ -734,9 +734,10 @@ boost_train_predict %>%
 
 # predict the test set and evaluate
 boost_test_predict <- boost_fit %>% predict(test_sub) 
-boost_test_predict %>% 
+boost_val <- boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
+boost_val
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -967,12 +968,12 @@ knn_20t_mae <- calculate_mae(test_sub$Disaster_Frequency, knn_20t$.pred)
 knn_5t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_5t$.pred)
 knn_10t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_10t$.pred)
 knn_20t_rmse <- calculate_rmse(test_sub$Disaster_Frequency, knn_20t$.pred)
-data.frame(models = c("knn5", "knn10", "knn20"),
+knn_held_metrics <- data.frame(models = c("knn5", "knn10", "knn20"),
            rsq = c(knn_5t_rsq, knn10t_rsq, knn20t_rsq),
            mae = c(knn_5t_mae, knn_10t_mae, knn_20t_mae),
            rmse = c(knn_5t_rmse, knn_10t_rmse, knn_20t_rmse)) %>%
   pivot_longer(cols = rsq:rmse)
-
+knn_held_metrics 
 ```
 All k-nearest neighbor models generated the same predictive values leading to the same held_out metrics where mae equals to 2.45 and rmse to 3.94. The model accounts for only 47% of the variability of disaster frequency.
 
@@ -1183,7 +1184,9 @@ model_selection_result
 Validation of held-out data has been performed above for each model. Below gathers all the held-out metrics from above into one table. 
 ```{r Cross Model Comparison}
 # Reformatting knn metric table to combine
-knn <- metrics_knn_held %>% select(.metric,.estimator, mean) %>% rename(.estimate=mean)
+knn <- knn_held_metrics  %>%  rename(.estimate=value,.metric=name) %>% 
+  mutate(.estimator="standard",.after=.metric) %>% 
+  select(.metric,.estimator, .estimate)
 knn_val_5 <-knn %>% slice(c(1:3))
 knn_val_10 <-knn %>% slice(c(4:6))
 knn_val_20 <-knn %>% slice(c(7:9))
@@ -1208,7 +1211,6 @@ val<- bind_rows(
   pivot_wider(names_from = c(".metric"), 
                               values_from = .estimate)
 val
-
 ```
 From the metrics of held out data, it is clear random forest and XG boost outperforms the other models resulting in a lower MAE and RMSE with an R squared of 0.84 and 0.75. 
 
