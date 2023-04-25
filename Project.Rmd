@@ -280,6 +280,10 @@ df_wide <- df_long %>% pivot_wider(names_from = c("Sector_abb", "Category"),
 df_wide <- df_wide %>% 
   mutate(Year = as.factor(Year))
 
+# Writing and saving data as csv
+# tidy_wide <- write.csv(df_wide,"Pathname/tidydata.csv", row.names = FALSE)
+# tidy_long <- write.csv(df_long,"Pathname/tidydata_long.csv", row.names = FALSE)
+
 # save(df_wide, file = "df_wide.csv")
 # save(df_long, file = "df_long.csv")
 ```
