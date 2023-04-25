@@ -301,40 +301,16 @@ test_sub <- test %>% select(-c(ISO3))
 ```
 
 # Defining the Research Question
-To examine the effects of domestically- versus foreign- controlled enterprises' CO$2$ emissions relative to sectors of activities performed for each country on climate related disasters. 
-The models that we will approach are as the following:
-- (Rene) Poisson Generalized Linear Regression Model with Lasso Penalty
-  - Lasso Penalty will be determined through cross validation. 
-- (Rene) Poisson Generalized Linear Model with Elastic Net Penalty
-  - cross validation to determine the best penalty rate
-- (Yuxin) Random Forest
-  - pass along several possible combinations of hyper-parameters and perform cross validation
-    - maximum depth, minimum number of samples at each split, n\_estimators ($4$ for each)
-    - parallel computing
-- (Jen) K-Nearest Neighbors Regression
-  - cross validation to determine the best k
-- (Yuxin) XG-Boost
-  - pass along several possible combinations of hyper-parameters and perform cross validation
-  - maximum depth, minimum number of samples at each split, n\_estimators ($4$ for each)
-  - parallel computing
-  
+Examine the effects of domestically- versus foreign- controlled enterprises' CO$2$ emissions relative to sectors of activities performed for each country on climate related disasters. 
+ 
 TARGET VARIABLE: Disaster_Frequency
 
-graphics: 
-- (Rene) line graph, count of disaster by year
-  - color code by sector (t.s. plot)
-- (Rene) line graph of aggregated count of disasters cross years. 
-  - t.s. plot
-- (Jen) world map and CO$2$ emission (optional)
-  - aggregating the CO$2$ emission across all years, and rank by country.
-  - ranking is going to be done by color. (gradient color, red is worse, while green is better)
-- (Jen) CO$2$ emission by country (do first, if time then do map)
-- (Jen) bar graphs of *df_long* category column, x\_axis is year. 
-  - facet wrap by category
-- (Yuxin) scatter plot, x-axis will be CO$2$ emission, y-axis will be count of disasters. 
-  - because count of disaster goes by year, then we will need to aggregate the CO$2$ emission by country and by year. So we sum all of the sectors and types of CO$2$ emissions. 
-
 # Visualizations
+      * Disaster by Year
+      * World Map of CO$2$ Emissions
+      * Disaster by Year for Each Country
+      * Emission versus Disaster Count for Each Country
+      * CO$2$ Emissions by Type of Enterprise
 Climate change is a global issue leading to higher natural disasters frequency. The line graph below depicts the total disaster event by year on a global level. Ever since the 1900s, natural disasters have been on the rise. Due to our incomplete data spanning from 2005 to 2008, this is a period of decline of disasters with 2005 having the most events.
 
 ```{r Disaster By Year, fig.cap={"Diaster by year. Count of total disaster decreased from years $2005$ to $2008$. This is a decreasing trend because of we are focusing on a relatively short time span. If one were to look at the count of diaster at a bigger time frame, one should see a general upward trend."}}
@@ -491,12 +467,13 @@ In developed countries, output of domestic controlled enterprises produce the mo
 
 
 # Modeling
-The five models we have chosen:
-      * Random Forest
-      * XG-Boosting
+
+      * Random Forest with hyper-parameter tuning
+      * XG-Boosting with hyper-parameter tuning
       * Poisson Generalized Linear Regression with Lasso
       * Poisson Generalized Linear Regression with Elastic Net
       * K-Nearest Neighbor Regression
+        + K = 5, 10, and 20
 
 ## Random Forest
 In modeling Random Forest, we will attempt with tuning the hyper-parameters including number of predictors at each split (mtry), number of trees for each ensemble (trees), and minimum number of data points at each split (min_n). The tuning is performed on three levels for each of the hyper-parameters, in total of $3^3 = 27$ possible combinations. A $10$-fold cross validation is performed twice to avoid sampling bias. Hence, in total $540$ models will be evaluated to obtain the best model. Further, to improve the modeling, categorical variables will be encoded into dummy variables and all numerical predictors will be normalized. Metrics used to evaluate the models are Mean Absolute Error (mae), Root Mean Squared Error (rmse), and residual Squared (rsq), each are a measure of deviation or error of predicted values from observed values. 
@@ -735,17 +712,14 @@ boost_train_predict_metrics
 
 # predict the test set and evaluate
 boost_test_predict <- boost_fit %>% predict(test_sub) 
-<<<<<<< HEAD
 boost_val <- boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
 boost_val
-=======
 boost_test_predict_metrics <- boost_test_predict %>% 
   mutate(truth = test_sub$Disaster_Frequency, estimate = .pred) %>%
   boost_metrics(truth = truth, estimate = .pred)
 boost_test_predict_metrics 
->>>>>>> e5ebdf32c11b790bfe704ac87fdd114db6bb8155
 ```
 
 ## Poisson Generalized Linear Regression Model with Lasso Penalty
@@ -1075,6 +1049,7 @@ According to the Partial Dependence Plot, the variable Output_Domestic_Construct
 
 # Add-Ons
 The five add on we have chosen are listed below.
+
 - **Github repository**: https://github.com/YuxinZ6/STAT5125_Project.git
 - **Relevant Map**: Chunk 9 or line 399-408 above
 - **Principle Component Analysis**
