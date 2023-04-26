@@ -510,7 +510,9 @@ hyperparam_tune_grid <- crossing(min_n = seq(10, 50, by = 20),
                                  trees = c(100, 500, 1000))
 # define cross validation
 rf_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
-# define metrics to be used
+# define metrics to be used. Notet that we define the rsq within the tidymodels 
+# context. In this case, rsq is the measure of correlation rather than an error
+# quantification measure. 
 RF_metrics <- metric_set(yardstick::rmse, mae, rsq)
 ```
 
