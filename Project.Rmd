@@ -89,7 +89,7 @@ The raw data consisted of $51$ sectors many were related to each other. Sectors 
 ```{r Cleaning dataset 11_Direct_Investment-related_Indicators}
 ####### Cleaning data set 11_Direct_Investment-related_Indicators #######
 # read the investment indicators dataset
-investment_indicators <- read_csv("11_Direct_Investment-related_Indicators.csv")
+investment_indicators <- read_csv("Data/11_Direct_Investment-related_Indicators.csv")
 
 # subset the dataset to discard unwanted columns
 investment_indicators <- investment_indicators %>% 
@@ -201,7 +201,7 @@ rm(tmp, investment_indicators)
 The following shows the left join of the second data set "Climate-related\_Diasters\_Frequency" by country and year.
 ```{r Cleaning dataset 24_Climate-related_Diasters_Frequency}
 ####### Cleaning dataset 24_Climate-related_Diasters_Frequency#######
-disasters_frequency <- read_csv("24_Climate-related_Disasters_Frequency.csv")
+disasters_frequency <- read_csv("Data/24_Climate-related_Disasters_Frequency.csv")
 
 # CTS Code for climate related disasters frequency is ECCD. 
 # Adding ECCD to CTS_label dictionary. 
@@ -510,7 +510,7 @@ hyperparam_tune_grid <- crossing(min_n = seq(10, 50, by = 20),
                                  trees = c(100, 500, 1000))
 # define cross validation
 rf_cv <- train_sub %>% vfold_cv(v = 10, times = 2)
-# define metrics to be used. Notet that we define the rsq within the tidymodels 
+# define metrics to be used. Note that we define the rsq within the tidymodels 
 # context. In this case, rsq is the measure of correlation rather than an error
 # quantification measure. 
 RF_metrics <- metric_set(yardstick::rmse, mae, rsq)
@@ -541,7 +541,7 @@ save(rf_tuning, file = "RandomForest_Prediction.rds")
 
 The following retrieves run result of parallel processing. Both the mean absolute error and root mean squared error suggests that hyper-parameter combination of mtry $= 30$, trees $=100$, and min_n $=10$ yields the best model. The residual squared supports that hyper-parameter combination of mtry $= 10$, trees $=500$, and min_n $=10$ will yield the best model. Hence, we proceed with the former hyper-parameter combination
 ```{r Random Forest Result}
-RF_prediction <- load("RandomForest_Prediction.rds")
+RF_prediction <- load("Scripts/RandomForest_Prediction.rds")
 
 # selecting the best hyperparameter combination
 Best_result1 <- rf_tuning %>% 
@@ -673,7 +673,7 @@ save(boost_tuning, file = "XGBoost_Prediction.rds")
 After retrieving the run result from parallel processing, all three metrics rsq, mae and rmse supports hyper-parameter combination of min_n $= 10$, tree_depth $=15$, and learn_rate $=0.1$ yields the best model. 
 
 ```{r XG-Boost Result}
-Boost_prediction <- load("XGBoost_Prediction.rds")
+Boost_prediction <- load("Scripts/XGBoost_Prediction.rds")
 
 Best_result4 <- boost_tuning %>% 
   filter(!(.metric == "rsq")) %>%
